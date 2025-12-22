@@ -187,22 +187,163 @@ function saveToken() {
 }
 
 // ============================================
-// Test Triggering (Placeholder for Step 4)
+// GitHub Actions API Integration
 // ============================================
-function triggerTest(config) {
-    showStatus('⏳ Preparing to trigger test...', 'info');
+async function triggerTest(config) {
+    showStatus('⏳ Triggering GitHub Actions workflow...', 'info');
+    elements.runBtn.disabled = true;
     
     console.log('📊 Test configuration:', config);
     
-    // This will be implemented in Step 4
+    try {
+        const token = localStorage.getItem(CONFIG.TOKEN_STORAGE_KEY);
+        
+        if (!token) {
+            throw new Error('GitHub token not found');
+        }
+        
+        // Construct API URL
+        const apiUrl = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/actions/workflows/${CONFIG.WORKFLOW_FILE}/dispatches`;
+        
+        console.log('🔗 API URL:', apiUrl);
+        
+        // Prepare request payload
+        const payload = {
+            ref: CONFIG.BRANCH,
+            inputs: {
+                config: JSON.stringify(config)
+            }
+        };
+        
+        console.log('📤 Sending payload:', payload);
+        
+        // Make API request
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        console.log('📥 Response status:', response.status);
+        
+        // Handle response
+        if (response.status === 204) {
+            // Success - workflow triggered
+            handleSuccess(config);
+        } else if (response.status === 404) {
+            throw new Error('Workflow not found. Check repository and workflow file name.');
+        } else if (response.status === 401) {
+            throw new Error('Authentication failed. Please check your GitHub token.');
+        } else if (response.status === 403) {
+            throw new Error('Permission denied. Token may lack required scopes (repo, workflow).');
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `API request failed with status ${response.status}`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        handleError(error);
+    } finally {
+        elements.runBtn.disabled = false;
+    }
+}
+
+function handleSuccess(config) {
+    const repoUrl = `https://github.com/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}`;
+    const actionsUrl = `${repoUrl}/actions/workflows/${CONFIG.WORKFLOW_FILE}`;
+    
+    const message = `✅ Performance test triggered successfully!\n\n` +
+        `📊 Configuration:\n` +
+        `   • Target: ${config.target_url}\n` +
+        `   • Duration: ${config.duration}s\n` +
+        `   • Users: ${config.users}\n\n` +
+        `⏱️  The workflow is now running...\n\n` +
+        `View progress: ${actionsUrl}`;
+    
+    showStatus(message, 'success');
+    
+    // Create clickable link in status
     setTimeout(() => {
-        showStatus(
-            '⚠️ Test triggering not yet implemented (Step 4)\n' +
-            'Current configuration:\n' +
-            JSON.stringify(config, null, 2),
-            'info'
-        );
-    }, 500);
+        elements.statusContent.innerHTML = `
+            <div class="status-success">
+                <p><strong>✅ Performance test triggered successfully!</strong></p>
+                <br>
+                <p><strong>📊 Configuration:</strong></p>
+                <ul>
+                    <li>Target: <code>${escapeHtml(config.target_url)}</code></li>
+                    <li>Duration: ${config.duration} seconds</li>
+                    <li>Users: ${config.users}</li>
+                </ul>
+                <br>
+                <p>⏱️ The workflow is now running...</p>
+                <br>
+                <p>
+                    <a href="${actionsUrl}" target="_blank" rel="noopener" class="status-link">
+                        🔗 View Workflow Progress →
+                    </a>
+                </p>
+            </div>
+        `;
+    }, 100);
+    
+    console.log('✅ Workflow triggered successfully');
+}
+
+function handleError(error) {
+    let errorMessage = '❌ Failed to trigger workflow\n\n';
+    
+    if (error.message.includes('token')) {
+        errorMessage += '🔑 Token Issue:\n' +
+            error.message + '\n\n' +
+            '💡 Try:\n' +
+            '   1. Clear your token and set a new one\n' +
+            '   2. Ensure token has "repo" and "workflow" scopes';
+    } else if (error.message.includes('not found')) {
+        errorMessage += '📁 Repository/Workflow Issue:\n' +
+            error.message + '\n\n' +
+            '💡 Check:\n' +
+            `   1. Repository: ${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}\n` +
+            `   2. Workflow file: .github/workflows/${CONFIG.WORKFLOW_FILE}\n` +
+            '   3. Repository is accessible with your token';
+    } else if (error.message.includes('Permission denied')) {
+        errorMessage += '🚫 Permission Issue:\n' +
+            error.message + '\n\n' +
+            '💡 Solution:\n' +
+            '   Generate a new token with "repo" and "workflow" scopes:\n' +
+            '   https://github.com/settings/tokens/new';
+    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage += '🌐 Network Issue:\n' +
+            'Could not reach GitHub API\n\n' +
+            '💡 Check:\n' +
+            '   1. Internet connection\n' +
+            '   2. GitHub status (https://www.githubstatus.com)\n' +
+            '   3. Browser console for details';
+    } else {
+        errorMessage += 'Error: ' + error.message;
+    }
+    
+    showStatus(errorMessage, 'error');
+    
+    console.error('❌ Full error:', error);
+}
+
+// ============================================
+// Utility Functions (Add to existing utilities)
+// ============================================
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 // ============================================

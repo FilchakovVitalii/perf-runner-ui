@@ -1,7 +1,6 @@
-// Configuration file - Update these values
 const CONFIG = {
     // Your private repository details
-    REPO_OWNER: 'YOUR_USERNAME',        // ⚠️ REPLACE THIS
+    REPO_OWNER: 'FilchakovVitalii',  // ⚠️ Must be exact
     REPO_NAME: 'perf-runner',
     WORKFLOW_FILE: 'perf-test.yml',
     BRANCH: 'main',
@@ -13,10 +12,5 @@ const CONFIG = {
     TOKEN_STORAGE_KEY: 'perf_runner_github_token',
     
     // Version
-    VERSION: '1.0.0'
+    VERSION: '1.0.0-step4'
 };
-
-// Do not edit below
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = CONFIG;
-}
