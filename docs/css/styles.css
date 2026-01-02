@@ -435,3 +435,37 @@ footer a:hover {
     overflow-x: auto;
     margin: 10px 0;
 }
+
+/* ============================================
+   Vue.js Specific Styles
+   ============================================ */
+
+/* Hide content until Vue is ready */
+[v-cloak] {
+    display: none;
+}
+
+/* Version badge in header */
+.version {
+    font-size: 0.85em;
+    opacity: 0.8;
+    margin-top: 4px;
+}
+
+/* Disabled button state (Vue controlled) */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Loading spinner for button */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+button:disabled::before {
+    content: '';
+    display: inline-block;
+    margin-right: 8px;
+}
