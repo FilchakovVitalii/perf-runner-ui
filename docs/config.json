@@ -1,0 +1,158 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "name": "Performance Test Configuration",
+    "description": "Dynamic configuration for load testing scenarios",
+    "updated": "2026-01-02"
+  },
+  "loadConfig": {
+    "smoke": {
+      "label": "Smoke Test",
+      "description": "Quick validation test with minimal load",
+      "rampUp": 60,
+      "users": 5,
+      "duration": 360,
+      "minPause": 1,
+      "maxPause": 3
+    },
+    "longevity": {
+      "label": "Longevity Test",
+      "description": "Extended duration test for stability",
+      "rampUp": 300,
+      "users": 10,
+      "duration": 28000,
+      "minPause": 1,
+      "maxPause": 3
+    },
+    "capacity": {
+      "label": "Capacity Test",
+      "description": "High load test to determine system limits",
+      "rampUp": 3300,
+      "users": 100,
+      "duration": 3600,
+      "warmupRamp": 1,
+      "warmupUsers": 1,
+      "warmupDuration": 60,
+      "minPause": 1,
+      "maxPause": 3
+    }
+  },
+  "environment": {
+    "sandbox": {
+      "label": "Sandbox",
+      "urls": [
+        "https://example-sandbox.com",
+        "https://domain-sandbox.com"
+      ]
+    },
+    "stage": {
+      "label": "Stage",
+      "urls": [
+        "https://example-stage.com",
+        "https://domain-stage.com"
+      ]
+    },
+    "production": {
+      "label": "Production",
+      "urls": [
+        "https://example-prod.com",
+        "https://domain.com"
+      ],
+      "warning": "⚠️ You are targeting PRODUCTION environment!"
+    }
+  },
+  "scenarioConfig": {
+    "project.scenario.ScenarioName": {
+      "label": "Scenario Name",
+      "description": "Main scenario with cache and cookie options",
+      "fields": {
+        "cookies_deny": false,
+        "use_cache": true
+      }
+    },
+    "project.scenario.ScenarioOther": {
+      "label": "Scenario Other",
+      "description": "Alternative scenario with custom parameters",
+      "fields": {
+        "custom_string_param": "default value",
+        "custom_digit_param": 10,
+        "use_cache": true
+      }
+    },
+    "project.scenario.ScenarioNoAdditionalFields": {
+      "label": "Scenario No Additional Fields",
+      "description": "Simple scenario without extra configuration",
+      "fields": {}
+    }
+  },
+  "fieldMetadata": {
+    "rampUp": {
+      "label": "Ramp-Up Time",
+      "type": "number",
+      "unit": "seconds",
+      "help": "Time to gradually reach target user count"
+    },
+    "users": {
+      "label": "Virtual Users",
+      "type": "number",
+      "unit": "concurrent users",
+      "help": "Number of simultaneous users to simulate"
+    },
+    "duration": {
+      "label": "Test Duration",
+      "type": "number",
+      "unit": "seconds",
+      "help": "How long the test should run"
+    },
+    "minPause": {
+      "label": "Min Pause",
+      "type": "number",
+      "unit": "seconds",
+      "help": "Minimum wait time between requests"
+    },
+    "maxPause": {
+      "label": "Max Pause",
+      "type": "number",
+      "unit": "seconds",
+      "help": "Maximum wait time between requests"
+    },
+    "warmupRamp": {
+      "label": "Warmup Ramp",
+      "type": "number",
+      "unit": "seconds",
+      "help": "Ramp-up time for warmup phase"
+    },
+    "warmupUsers": {
+      "label": "Warmup Users",
+      "type": "number",
+      "unit": "users",
+      "help": "Number of users during warmup"
+    },
+    "warmupDuration": {
+      "label": "Warmup Duration",
+      "type": "number",
+      "unit": "seconds",
+      "help": "Duration of warmup phase"
+    },
+    "cookies_deny": {
+      "label": "Deny Cookies",
+      "type": "boolean",
+      "help": "Disable cookie handling in requests"
+    },
+    "use_cache": {
+      "label": "Use Cache",
+      "type": "boolean",
+      "help": "Enable response caching"
+    },
+    "custom_string_param": {
+      "label": "Custom String Parameter",
+      "type": "string",
+      "help": "Custom string value for scenario"
+    },
+    "custom_digit_param": {
+      "label": "Custom Digit Parameter",
+      "type": "number",
+      "help": "Custom numeric value for scenario"
+    }
+  }
+}
