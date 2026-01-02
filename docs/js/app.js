@@ -1,6 +1,6 @@
 /**
  * Performance Test Runner - Vue.js Application
- * Step 5: Migration to Vue.js while maintaining functionality
+ * Step 6: Configuration loading and dynamic dropdowns
  */
 
 const { createApp } = Vue;
@@ -15,9 +15,22 @@ createApp({
             config: window.CONFIG,
             version: window.CONFIG.VERSION,
             
-            // Form data
+            // Test configuration (loaded from config.json)
+            testConfig: null,
+            configLoading: true,
+            configError: null,
+            
+            // User selections
+            selection: {
+                loadType: '',
+                environment: '',
+                targetUrl: '',
+                scenario: ''
+            },
+            
+            // Legacy form data (will be replaced by dynamic fields in Step 7)
             form: {
-                targetUrl: 'https://jsonplaceholder.typicode.com/posts',
+                targetUrl: '',
                 duration: 60,
                 users: 10
             },
@@ -29,7 +42,7 @@ createApp({
             // Status display
             status: {
                 visible: false,
-                type: 'info', // 'info', 'success', 'error'
+                type: 'info',
                 message: ''
             },
             
@@ -45,19 +58,77 @@ createApp({
     },
 
     // ============================================
-    // Computed Properties - Derived State
+    // Computed Properties
     // ============================================
     computed: {
+        /**
+         * Get selected load configuration
+         */
+        selectedLoadConfig() {
+            if (!this.selection.loadType || !this.testConfig) return null;
+            return this.testConfig.loadConfig[this.selection.loadType];
+        },
+
+        /**
+         * Get selected environment configuration
+         */
+        selectedEnvironment() {
+            if (!this.selection.environment || !this.testConfig) return null;
+            return this.testConfig.environment[this.selection.environment];
+        },
+
+        /**
+         * Get selected scenario configuration
+         */
+        selectedScenario() {
+            if (!this.selection.scenario || !this.testConfig) return null;
+            return this.testConfig.scenarioConfig[this.selection.scenario];
+        },
+
+        /**
+         * Get scenario fields
+         */
+        selectedScenarioFields() {
+            if (!this.selectedScenario) return null;
+            return this.selectedScenario.fields;
+        },
+
+        /**
+         * Get available URLs based on selected environment
+         */
+        availableUrls() {
+            if (!this.selectedEnvironment) return [];
+            return this.selectedEnvironment.urls || [];
+        },
+
+        /**
+         * Check if form is valid
+         */
+        isFormValid() {
+            return this.selection.loadType &&
+                   this.selection.environment &&
+                   this.selection.targetUrl &&
+                   this.selection.scenario;
+        },
+
         /**
          * Generate formatted JSON configuration
          */
         formattedConfig() {
+            if (!this.isFormValid) {
+                return 'Select all required options to generate configuration...';
+            }
+
             const config = {
-                target_url: this.form.targetUrl,
-                duration: this.form.duration,
-                users: this.form.users,
+                loadType: this.selection.loadType,
+                loadConfig: this.selectedLoadConfig,
+                environment: this.selection.environment,
+                targetUrl: this.selection.targetUrl,
+                scenario: this.selection.scenario,
+                scenarioFields: this.selectedScenarioFields,
                 timestamp: new Date().toISOString()
             };
+            
             return JSON.stringify(config, null, 2);
         },
 
@@ -66,9 +137,12 @@ createApp({
          */
         currentConfig() {
             return {
-                target_url: this.form.targetUrl,
-                duration: this.form.duration,
-                users: this.form.users,
+                loadType: this.selection.loadType,
+                loadConfig: this.selectedLoadConfig,
+                environment: this.selection.environment,
+                target_url: this.selection.targetUrl,
+                scenario: this.selection.scenario,
+                scenarioFields: this.selectedScenarioFields,
                 timestamp: new Date().toISOString()
             };
         }
@@ -77,9 +151,12 @@ createApp({
     // ============================================
     // Lifecycle Hooks
     // ============================================
-    mounted() {
+    async mounted() {
         console.log('🚀 Performance Test Runner (Vue.js) initialized');
         console.log('📝 Configuration:', this.config);
+        
+        // Load test configuration
+        await this.loadConfiguration();
         
         // Check for existing token
         this.checkToken();
@@ -93,10 +170,82 @@ createApp({
     // ============================================
     methods: {
         /**
+         * Load configuration from config.json
+         */
+        async loadConfiguration() {
+            this.configLoading = true;
+            this.configError = null;
+
+            try {
+                console.log('📥 Loading configuration from config.json...');
+                
+                const response = await fetch('config.json');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const config = await response.json();
+                
+                // Validate configuration structure
+                if (!config.loadConfig || !config.environment || !config.scenarioConfig) {
+                    throw new Error('Invalid configuration structure');
+                }
+                
+                this.testConfig = config;
+                console.log('✅ Configuration loaded successfully:', config);
+                
+            } catch (error) {
+                console.error('❌ Failed to load configuration:', error);
+                this.configError = error.message;
+            } finally {
+                this.configLoading = false;
+            }
+        },
+
+        /**
+         * Handle load type change
+         */
+        onLoadTypeChange() {
+            console.log('Load type changed:', this.selection.loadType);
+            console.log('Load config:', this.selectedLoadConfig);
+        },
+
+        /**
+         * Handle environment change
+         */
+        onEnvironmentChange() {
+            console.log('Environment changed:', this.selection.environment);
+            console.log('Available URLs:', this.availableUrls);
+            
+            // Reset URL selection when environment changes
+            this.selection.targetUrl = '';
+            
+            // Auto-select first URL if only one available
+            if (this.availableUrls.length === 1) {
+                this.selection.targetUrl = this.availableUrls[0];
+            }
+        },
+
+        /**
+         * Handle scenario change
+         */
+        onScenarioChange() {
+            console.log('Scenario changed:', this.selection.scenario);
+            console.log('Scenario config:', this.selectedScenario);
+            console.log('Scenario fields:', this.selectedScenarioFields);
+        },
+
+        /**
          * Handle form submission
          */
         handleSubmit() {
             console.log('📊 Form submitted');
+            
+            if (!this.isFormValid) {
+                this.showStatus('Please select all required options', 'error');
+                return;
+            }
             
             // Check if token exists
             if (!this.hasToken) {
@@ -188,9 +337,10 @@ createApp({
                     <br>
                     <p><strong>📊 Configuration:</strong></p>
                     <ul>
+                        <li>Load Type: <code>${config.loadType}</code></li>
+                        <li>Environment: <code>${config.environment}</code></li>
                         <li>Target: <code>${this.escapeHtml(config.target_url)}</code></li>
-                        <li>Duration: ${config.duration} seconds</li>
-                        <li>Users: ${config.users}</li>
+                        <li>Scenario: <code>${config.scenario}</code></li>
                     </ul>
                     <br>
                     <p>⏱️ The workflow is now running...</p>
@@ -268,7 +418,6 @@ createApp({
             this.status.type = type;
             this.status.message = message;
             
-            // Scroll to status (next tick to ensure it's rendered)
             this.$nextTick(() => {
                 const statusEl = document.querySelector('.status-section');
                 if (statusEl) {
@@ -361,4 +510,4 @@ createApp({
 // Console Utilities
 // ============================================
 console.log('💡 Vue app available via: window.vueApp');
-console.log('💡 Try: vueApp.form, vueApp.config, vueApp.triggerTest()');
+console.log('💡 Try: vueApp.testConfig, vueApp.selection');
