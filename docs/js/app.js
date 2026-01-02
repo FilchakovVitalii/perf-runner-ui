@@ -14,12 +14,12 @@ createApp({
             // App configuration
             config: window.CONFIG,
             version: window.CONFIG.VERSION,
-            
+
             // Test configuration (loaded from config.json)
             testConfig: null,
             configLoading: true,
             configError: null,
-            
+
             // User selections
             selection: {
                 loadType: '',
@@ -27,38 +27,38 @@ createApp({
                 targetUrl: '',
                 scenario: ''
             },
-            
+
             // Dynamic field data
             loadData: {},
             scenarioData: {},
-            
+
             // Generated field definitions
             loadConfigFields: [],
             scenarioConfigFields: [],
-            
+
             // Validation
             validationErrors: {
                 load: [],
                 scenario: []
             },
-            
+
             // UI state
             isSubmitting: false,
             copyButtonText: '📋',
-            
+
             // Status display
             status: {
                 visible: false,
                 type: 'info',
                 message: ''
             },
-            
+
             // Modal state
             modal: {
                 visible: false,
                 tokenInput: ''
             },
-            
+
             // Token status
             hasToken: false
         };
@@ -113,9 +113,9 @@ createApp({
          */
         isFormValid() {
             return this.selection.loadType &&
-                   this.selection.environment &&
-                   this.selection.targetUrl &&
-                   this.selection.scenario;
+                this.selection.environment &&
+                this.selection.targetUrl &&
+                this.selection.scenario;
         },
 
         /**
@@ -123,7 +123,7 @@ createApp({
          */
         hasValidationErrors() {
             return this.validationErrors.load.length > 0 ||
-                   this.validationErrors.scenario.length > 0;
+                this.validationErrors.scenario.length > 0;
         },
 
         /**
@@ -163,26 +163,26 @@ createApp({
          */
         'selection.loadType'(newType) {
             if (!newType || !this.testConfig) return;
-            
+
             console.log('Load type changed to:', newType);
-            
+
             const config = this.testConfig.loadConfig[newType];
-            
+
             // Extract field values (exclude label, description)
             const { label, description, ...fieldValues } = config;
-            
+
             // Clone values to loadData
             this.loadData = { ...fieldValues };
-            
+
             // Generate field definitions
             this.loadConfigFields = this.generateFields(
                 fieldValues,
                 this.testConfig.fieldMetadata
             );
-            
+
             console.log('Generated fields:', this.loadConfigFields);
             console.log('Load data:', this.loadData);
-            
+
             // Validate
             this.validateLoadConfig();
         },
@@ -192,10 +192,10 @@ createApp({
          */
         'selection.environment'(newEnv) {
             console.log('Environment changed to:', newEnv);
-            
+
             // Reset URL when environment changes
             this.selection.targetUrl = '';
-            
+
             // Auto-select first URL if only one available
             if (this.availableUrls.length === 1) {
                 this.selection.targetUrl = this.availableUrls[0];
@@ -207,20 +207,20 @@ createApp({
          */
         'selection.scenario'(newScenario) {
             if (!newScenario || !this.testConfig) return;
-            
+
             console.log('Scenario changed to:', newScenario);
-            
+
             const fields = this.testConfig.scenarioConfig[newScenario].fields;
-            
+
             // Clone values to scenarioData
             this.scenarioData = { ...fields };
-            
+
             // Generate field definitions
             this.scenarioConfigFields = this.generateFields(
                 fields,
                 this.testConfig.fieldMetadata
             );
-            
+
             console.log('Scenario fields:', this.scenarioConfigFields);
             console.log('Scenario data:', this.scenarioData);
         },
@@ -242,13 +242,13 @@ createApp({
     async mounted() {
         console.log('🚀 Performance Test Runner (Vue.js) initialized');
         console.log('📝 Configuration:', this.config);
-        
+
         // Load test configuration
         await this.loadConfiguration();
-        
+
         // Check for existing token
         this.checkToken();
-        
+
         // Make available in console for debugging
         window.vueApp = this;
     },
@@ -266,23 +266,23 @@ createApp({
 
             try {
                 console.log('📥 Loading configuration from config.json...');
-                
+
                 const response = await fetch('config.json');
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
+
                 const config = await response.json();
-                
+
                 // Validate configuration structure
                 if (!config.loadConfig || !config.environment || !config.scenarioConfig) {
                     throw new Error('Invalid configuration structure');
                 }
-                
+
                 this.testConfig = config;
                 console.log('✅ Configuration loaded successfully');
-                
+
             } catch (error) {
                 console.error('❌ Failed to load configuration:', error);
                 this.configError = error.message;
@@ -297,7 +297,7 @@ createApp({
         generateFields(configObject, metadataSource) {
             return Object.entries(configObject).map(([key, value]) => {
                 const metadata = metadataSource[key] || {};
-                
+
                 return {
                     name: key,
                     value: value,
@@ -316,14 +316,18 @@ createApp({
         detectFieldType(value, metadata) {
             // Use metadata type if available
             if (metadata.type) {
-                return metadata.type;
+                // Normalize type names
+                const type = metadata.type.toLowerCase();
+                if (type === 'boolean') return 'boolean';  // Keep as 'boolean'
+                if (type === 'string') return 'text';      // Normalize to 'text'
+                return type;
             }
-            
+
             // Detect from value
-            if (typeof value === 'boolean') return 'checkbox';
+            if (typeof value === 'boolean') return 'boolean';  // Changed from 'checkbox'
             if (typeof value === 'number') return 'number';
             if (typeof value === 'string') return 'text';
-            
+
             return 'text';
         },
 
@@ -353,33 +357,33 @@ createApp({
          */
         validateLoadConfig() {
             const errors = [];
-            
+
             // Validate users >= 1
             if (this.loadData.users !== undefined && this.loadData.users < 1) {
                 errors.push('Users must be at least 1');
             }
-            
+
             // Validate duration >= 0
             if (this.loadData.duration !== undefined && this.loadData.duration < 0) {
                 errors.push('Duration cannot be negative');
             }
-            
+
             // Validate duration >= rampUp
-            if (this.loadData.duration !== undefined && 
+            if (this.loadData.duration !== undefined &&
                 this.loadData.rampUp !== undefined &&
                 this.loadData.duration < this.loadData.rampUp) {
                 errors.push('Duration must be greater than or equal to Ramp-Up time');
             }
-            
+
             // Validate minPause <= maxPause
-            if (this.loadData.minPause !== undefined && 
+            if (this.loadData.minPause !== undefined &&
                 this.loadData.maxPause !== undefined &&
                 this.loadData.minPause > this.loadData.maxPause) {
                 errors.push('Min Pause cannot be greater than Max Pause');
             }
-            
+
             this.validationErrors.load = errors;
-            
+
             if (errors.length > 0) {
                 console.log('⚠️ Validation errors:', errors);
             }
@@ -390,23 +394,23 @@ createApp({
          */
         handleSubmit() {
             console.log('📊 Form submitted');
-            
+
             if (!this.isFormValid) {
                 this.showStatus('Please select all required options', 'error');
                 return;
             }
-            
+
             if (this.hasValidationErrors) {
                 this.showStatus('Please fix validation errors before submitting', 'error');
                 return;
             }
-            
+
             // Check if token exists
             if (!this.hasToken) {
                 this.openModal();
                 return;
             }
-            
+
             // Trigger test
             this.triggerTest();
         },
@@ -417,22 +421,22 @@ createApp({
         async triggerTest() {
             this.showStatus('⏳ Triggering GitHub Actions workflow...', 'info');
             this.isSubmitting = true;
-            
+
             const config = this.currentConfig;
             console.log('📊 Test configuration:', config);
-            
+
             try {
                 const token = localStorage.getItem(this.config.TOKEN_STORAGE_KEY);
-                
+
                 if (!token) {
                     throw new Error('GitHub token not found');
                 }
-                
+
                 // Construct API URL
                 const apiUrl = `${this.config.API_BASE}/repos/${this.config.REPO_OWNER}/${this.config.REPO_NAME}/actions/workflows/${this.config.WORKFLOW_FILE}/dispatches`;
-                
+
                 console.log('🔗 API URL:', apiUrl);
-                
+
                 // Prepare payload
                 const payload = {
                     ref: this.config.BRANCH,
@@ -440,9 +444,9 @@ createApp({
                         config: JSON.stringify(config)
                     }
                 };
-                
+
                 console.log('📤 Sending payload:', payload);
-                
+
                 // Make API request
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -453,9 +457,9 @@ createApp({
                     },
                     body: JSON.stringify(payload)
                 });
-                
+
                 console.log('📥 Response status:', response.status);
-                
+
                 // Handle response
                 if (response.status === 204) {
                     this.handleSuccess(config);
@@ -469,7 +473,7 @@ createApp({
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.message || `API request failed with status ${response.status}`);
                 }
-                
+
             } catch (error) {
                 console.error('❌ Error:', error);
                 this.handleError(error);
@@ -484,7 +488,7 @@ createApp({
         handleSuccess(config) {
             const repoUrl = `https://github.com/${this.config.REPO_OWNER}/${this.config.REPO_NAME}`;
             const actionsUrl = `${repoUrl}/actions/workflows/${this.config.WORKFLOW_FILE}`;
-            
+
             const message = `
                 <div>
                     <p><strong>✅ Performance test triggered successfully!</strong></p>
@@ -508,7 +512,7 @@ createApp({
                     </p>
                 </div>
             `;
-            
+
             this.showStatus(message, 'success');
             console.log('✅ Workflow triggered successfully');
         },
@@ -518,7 +522,7 @@ createApp({
          */
         handleError(error) {
             let errorMessage = '<p><strong>❌ Failed to trigger workflow</strong></p><br>';
-            
+
             if (error.message.includes('token')) {
                 errorMessage += `
                     <p>🔑 <strong>Token Issue:</strong></p>
@@ -545,7 +549,7 @@ createApp({
             } else {
                 errorMessage += `<p>${error.message}</p>`;
             }
-            
+
             this.showStatus(errorMessage, 'error');
         },
 
@@ -556,7 +560,7 @@ createApp({
             try {
                 await navigator.clipboard.writeText(this.formattedConfig);
                 this.copyButtonText = '✅';
-                
+
                 setTimeout(() => {
                     this.copyButtonText = '📋';
                 }, 2000);
@@ -573,7 +577,7 @@ createApp({
             this.status.visible = true;
             this.status.type = type;
             this.status.message = message;
-            
+
             this.$nextTick(() => {
                 const statusEl = document.querySelector('.status-section');
                 if (statusEl) {
@@ -595,7 +599,7 @@ createApp({
         checkToken() {
             const token = localStorage.getItem(this.config.TOKEN_STORAGE_KEY);
             this.hasToken = !!token;
-            
+
             if (this.hasToken) {
                 console.log('✅ GitHub token found');
             } else {
@@ -626,23 +630,23 @@ createApp({
          */
         saveToken() {
             const token = this.modal.tokenInput.trim();
-            
+
             if (!token) {
                 alert('Please enter a valid token');
                 return;
             }
-            
+
             if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
                 const confirmed = confirm('Token format looks unusual. Are you sure this is correct?');
                 if (!confirmed) return;
             }
-            
+
             localStorage.setItem(this.config.TOKEN_STORAGE_KEY, token);
             this.hasToken = true;
-            
+
             this.closeModal();
             this.showStatus('✅ Token saved successfully! You can now trigger tests.', 'success');
-            
+
             console.log('✅ Token saved');
         },
 

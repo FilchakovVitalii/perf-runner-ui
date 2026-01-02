@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Performance Test Runner</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <!-- Vue App Container -->
     <div id="app" v-cloak>
@@ -20,7 +22,7 @@
                 <!-- Configuration Form -->
                 <section class="config-section">
                     <h2>Test Configuration</h2>
-                    
+
                     <!-- Loading State -->
                     <div v-if="configLoading" class="loading-state">
                         <p>⏳ Loading configuration...</p>
@@ -37,27 +39,19 @@
 
                     <!-- Configuration Form -->
                     <form @submit.prevent="handleSubmit" v-else>
-                        
+
                         <!-- ========================================
                              SELECTION DROPDOWNS
                              ======================================== -->
-                        
+
                         <!-- Load Type Selection -->
                         <div class="form-group">
                             <label for="load-type">
                                 Load Type <span class="required">*</span>
                             </label>
-                            <select 
-                                id="load-type"
-                                v-model="selection.loadType"
-                                required
-                            >
+                            <select id="load-type" v-model="selection.loadType" required>
                                 <option value="">-- Select Load Type --</option>
-                                <option 
-                                    v-for="(config, key) in testConfig.loadConfig" 
-                                    :key="key"
-                                    :value="key"
-                                >
+                                <option v-for="(config, key) in testConfig.loadConfig" :key="key" :value="key">
                                     {{ config.label }}
                                 </option>
                             </select>
@@ -69,18 +63,15 @@
                         <!-- ========================================
                              DYNAMIC LOAD CONFIGURATION FIELDS
                              ======================================== -->
-                        
+
                         <div v-if="loadConfigFields.length > 0" class="field-group">
                             <h3 class="field-group-title">
                                 📊 Load Configuration
                             </h3>
-                            
+
                             <div class="field-group-content">
-                                <div 
-                                    v-for="field in loadConfigFields" 
-                                    :key="field.name"
-                                    :class="['form-group', field.type === 'checkbox' ? 'checkbox-group' : '']"
-                                >
+                                <div v-for="field in loadConfigFields" :key="field.name"
+                                    :class="['form-group', field.type === 'checkbox' ? 'checkbox-group' : '']">
                                     <!-- Number Input -->
                                     <template v-if="field.type === 'number'">
                                         <label :for="'load-' + field.name">
@@ -88,45 +79,33 @@
                                             <span v-if="field.unit" class="field-unit">({{ field.unit }})</span>
                                             <span class="required">*</span>
                                         </label>
-                                        <input 
-                                            :id="'load-' + field.name"
-                                            type="number"
-                                            v-model.number="loadData[field.name]"
-                                            :min="field.min"
-                                            required
-                                        >
+                                        <input :id="'load-' + field.name" type="number"
+                                            v-model.number="loadData[field.name]" :min="field.min" required>
                                         <small v-if="field.help">{{ field.help }}</small>
                                     </template>
-                                    
+
                                     <!-- Text Input -->
-                                    <template v-if="field.type === 'text'">
+                                    <template v-if="field.type === 'text' || field.type === 'string'">
                                         <label :for="'load-' + field.name">
                                             {{ field.label }}
                                             <span class="required">*</span>
                                         </label>
-                                        <input 
-                                            :id="'load-' + field.name"
-                                            type="text"
-                                            v-model="loadData[field.name]"
-                                            required
-                                        >
+                                        <input :id="'load-' + field.name" type="text" v-model="loadData[field.name]"
+                                            required>
                                         <small v-if="field.help">{{ field.help }}</small>
                                     </template>
-                                    
+
                                     <!-- Checkbox -->
-                                    <template v-if="field.type === 'checkbox'">
+                                    <template v-if="field.type === 'checkbox' || field.type === 'boolean'">
                                         <label :for="'load-' + field.name" class="checkbox-label">
-                                            <input 
-                                                :id="'load-' + field.name"
-                                                type="checkbox"
-                                                v-model="loadData[field.name]"
-                                            >
+                                            <input :id="'load-' + field.name" type="checkbox"
+                                                v-model="loadData[field.name]">
                                             <span class="checkbox-text">{{ field.label }}</span>
                                         </label>
                                         <small v-if="field.help">{{ field.help }}</small>
                                     </template>
                                 </div>
-                                
+
                                 <!-- Validation Errors -->
                                 <div v-if="validationErrors.load.length > 0" class="validation-errors">
                                     <p v-for="(error, index) in validationErrors.load" :key="index">
@@ -145,22 +124,13 @@
                             <label for="environment">
                                 Environment <span class="required">*</span>
                             </label>
-                            <select 
-                                id="environment"
-                                v-model="selection.environment"
-                                required
-                            >
+                            <select id="environment" v-model="selection.environment" required>
                                 <option value="">-- Select Environment --</option>
-                                <option 
-                                    v-for="(config, key) in testConfig.environment" 
-                                    :key="key"
-                                    :value="key"
-                                >
+                                <option v-for="(config, key) in testConfig.environment" :key="key" :value="key">
                                     {{ config.label }}
                                 </option>
                             </select>
-                            <small v-if="selectedEnvironment && selectedEnvironment.warning" 
-                                   class="warning-text">
+                            <small v-if="selectedEnvironment && selectedEnvironment.warning" class="warning-text">
                                 {{ selectedEnvironment.warning }}
                             </small>
                         </div>
@@ -170,17 +140,9 @@
                             <label for="target-url">
                                 Target URL <span class="required">*</span>
                             </label>
-                            <select 
-                                id="target-url"
-                                v-model="selection.targetUrl"
-                                required
-                            >
+                            <select id="target-url" v-model="selection.targetUrl" required>
                                 <option value="">-- Select URL --</option>
-                                <option 
-                                    v-for="url in availableUrls" 
-                                    :key="url"
-                                    :value="url"
-                                >
+                                <option v-for="url in availableUrls" :key="url" :value="url">
                                     {{ url }}
                                 </option>
                             </select>
@@ -196,17 +158,9 @@
                             <label for="scenario">
                                 Scenario <span class="required">*</span>
                             </label>
-                            <select 
-                                id="scenario"
-                                v-model="selection.scenario"
-                                required
-                            >
+                            <select id="scenario" v-model="selection.scenario" required>
                                 <option value="">-- Select Scenario --</option>
-                                <option 
-                                    v-for="(config, key) in testConfig.scenarioConfig" 
-                                    :key="key"
-                                    :value="key"
-                                >
+                                <option v-for="(config, key) in testConfig.scenarioConfig" :key="key" :value="key">
                                     {{ config.label }}
                                 </option>
                             </select>
@@ -223,55 +177,42 @@
                             <h3 class="field-group-title">
                                 🎯 Scenario Configuration
                             </h3>
-                            
+
                             <div class="field-group-content">
                                 <!-- No fields message -->
                                 <div v-if="scenarioConfigFields.length === 0" class="no-fields">
                                     <p>✓ No additional configuration required for this scenario</p>
                                 </div>
-                                
+
                                 <!-- Dynamic scenario fields -->
-                                <div 
-                                    v-for="field in scenarioConfigFields" 
-                                    :key="field.name"
-                                    :class="['form-group', field.type === 'checkbox' ? 'checkbox-group' : '']"
-                                >
+                                <div v-for="field in scenarioConfigFields" :key="field.name"
+                                    :class="['form-group', field.type === 'checkbox' ? 'checkbox-group' : '']">
                                     <!-- Number Input -->
                                     <template v-if="field.type === 'number'">
                                         <label :for="'scenario-' + field.name">
                                             {{ field.label }}
                                             <span v-if="field.unit" class="field-unit">({{ field.unit }})</span>
                                         </label>
-                                        <input 
-                                            :id="'scenario-' + field.name"
-                                            type="number"
-                                            v-model.number="scenarioData[field.name]"
-                                            :min="field.min"
-                                        >
+                                        <input :id="'scenario-' + field.name" type="number"
+                                            v-model.number="scenarioData[field.name]" :min="field.min">
                                         <small v-if="field.help">{{ field.help }}</small>
                                     </template>
-                                    
+
                                     <!-- Text Input -->
-                                    <template v-if="field.type === 'text'">
+                                    <template v-if="field.type === 'text' || field.type === 'string'">
                                         <label :for="'scenario-' + field.name">
                                             {{ field.label }}
                                         </label>
-                                        <input 
-                                            :id="'scenario-' + field.name"
-                                            type="text"
-                                            v-model="scenarioData[field.name]"
-                                        >
+                                        <input :id="'scenario-' + field.name" type="text"
+                                            v-model="scenarioData[field.name]">
                                         <small v-if="field.help">{{ field.help }}</small>
                                     </template>
-                                    
+
                                     <!-- Checkbox -->
-                                    <template v-if="field.type === 'checkbox'">
+                                    <template v-if="field.type === 'checkbox' || field.type === 'boolean'">
                                         <label :for="'scenario-' + field.name" class="checkbox-label">
-                                            <input 
-                                                :id="'scenario-' + field.name"
-                                                type="checkbox"
-                                                v-model="scenarioData[field.name]"
-                                            >
+                                            <input :id="'scenario-' + field.name" type="checkbox"
+                                                v-model="scenarioData[field.name]">
                                             <span class="checkbox-text">{{ field.label }}</span>
                                         </label>
                                         <small v-if="field.help">{{ field.help }}</small>
@@ -284,11 +225,8 @@
                              SUBMIT BUTTON
                              ======================================== -->
 
-                        <button 
-                            type="submit" 
-                            class="btn btn-primary" 
-                            :disabled="isSubmitting || !isFormValid || hasValidationErrors"
-                        >
+                        <button type="submit" class="btn btn-primary"
+                            :disabled="isSubmitting || !isFormValid || hasValidationErrors">
                             <span v-if="!isSubmitting">▶️ Run Performance Test</span>
                             <span v-else>⏳ Triggering...</span>
                         </button>
@@ -300,12 +238,7 @@
                     <h2>Generated Configuration</h2>
                     <div class="json-container">
                         <pre id="json-output" class="json-output">{{ formattedConfig }}</pre>
-                        <button 
-                            type="button" 
-                            class="btn-icon" 
-                            @click="copyJSON"
-                            title="Copy JSON"
-                        >
+                        <button type="button" class="btn-icon" @click="copyJSON" title="Copy JSON">
                             {{ copyButtonText }}
                         </button>
                     </div>
@@ -314,20 +247,15 @@
                 <!-- Status Section -->
                 <section class="status-section" v-if="status.visible">
                     <h2>Status</h2>
-                    <div 
-                        class="status-content" 
-                        :class="'status-' + status.type"
-                        v-html="status.message"
-                    ></div>
+                    <div class="status-content" :class="'status-' + status.type" v-html="status.message"></div>
                 </section>
             </main>
 
             <footer>
                 <p>
-                    Powered by GitHub Actions | 
-                    <a :href="'https://github.com/' + config.REPO_OWNER + '/perf-runner-ui'" 
-                       target="_blank" 
-                       rel="noopener">
+                    Powered by GitHub Actions |
+                    <a :href="'https://github.com/' + config.REPO_OWNER + '/perf-runner-ui'" target="_blank"
+                        rel="noopener">
                         View Source
                     </a>
                 </p>
@@ -339,20 +267,14 @@
             <div class="modal-content">
                 <h3>⚠️ GitHub Token Required</h3>
                 <p>To trigger GitHub Actions, you need to provide a Personal Access Token.</p>
-                
+
                 <div class="form-group">
                     <label for="github-token">GitHub Personal Access Token</label>
-                    <input 
-                        type="password" 
-                        id="github-token"
-                        v-model="modal.tokenInput"
-                        @keyup.enter="saveToken"
-                        placeholder="ghp_xxxxxxxxxxxx"
-                    >
+                    <input type="password" id="github-token" v-model="modal.tokenInput" @keyup.enter="saveToken"
+                        placeholder="ghp_xxxxxxxxxxxx">
                     <small>
-                        <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Perf%20Test%20Runner" 
-                           target="_blank" 
-                           rel="noopener">
+                        <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Perf%20Test%20Runner"
+                            target="_blank" rel="noopener">
                             Generate token
                         </a> with <code>repo</code> and <code>workflow</code> scopes
                     </small>
@@ -372,11 +294,12 @@
 
     <!-- Load Vue.js 3 from CDN -->
     <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
-    
+
     <!-- Configuration -->
     <script src="js/config.js"></script>
-    
+
     <!-- Vue Application -->
     <script src="js/app.js"></script>
 </body>
+
 </html>
