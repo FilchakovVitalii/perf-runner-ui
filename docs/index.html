@@ -21,52 +21,134 @@
                 <section class="config-section">
                     <h2>Test Configuration</h2>
                     
-                    <form @submit.prevent="handleSubmit">
-                        <!-- Target URL -->
+                    <!-- Loading State -->
+                    <div v-if="configLoading" class="loading-state">
+                        <p>⏳ Loading configuration...</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div v-else-if="configError" class="error-state">
+                        <p>❌ Failed to load configuration</p>
+                        <p class="error-message">{{ configError }}</p>
+                        <button class="btn btn-secondary" @click="loadConfiguration">
+                            🔄 Retry
+                        </button>
+                    </div>
+
+                    <!-- Configuration Form -->
+                    <form @submit.prevent="handleSubmit" v-else>
+                        
+                        <!-- Load Type Selection -->
                         <div class="form-group">
+                            <label for="load-type">
+                                Load Type <span class="required">*</span>
+                            </label>
+                            <select 
+                                id="load-type"
+                                v-model="selection.loadType"
+                                @change="onLoadTypeChange"
+                                required
+                            >
+                                <option value="">-- Select Load Type --</option>
+                                <option 
+                                    v-for="(config, key) in testConfig.loadConfig" 
+                                    :key="key"
+                                    :value="key"
+                                >
+                                    {{ config.label }}
+                                </option>
+                            </select>
+                            <small v-if="selectedLoadConfig">
+                                {{ selectedLoadConfig.description }}
+                            </small>
+                        </div>
+
+                        <!-- Environment Selection -->
+                        <div class="form-group">
+                            <label for="environment">
+                                Environment <span class="required">*</span>
+                            </label>
+                            <select 
+                                id="environment"
+                                v-model="selection.environment"
+                                @change="onEnvironmentChange"
+                                required
+                            >
+                                <option value="">-- Select Environment --</option>
+                                <option 
+                                    v-for="(config, key) in testConfig.environment" 
+                                    :key="key"
+                                    :value="key"
+                                >
+                                    {{ config.label }}
+                                </option>
+                            </select>
+                            <small v-if="selectedEnvironment && selectedEnvironment.warning" 
+                                   class="warning-text">
+                                {{ selectedEnvironment.warning }}
+                            </small>
+                        </div>
+
+                        <!-- Target URL Selection (cascading from environment) -->
+                        <div class="form-group" v-if="availableUrls.length > 0">
                             <label for="target-url">
                                 Target URL <span class="required">*</span>
                             </label>
-                            <input 
-                                type="url" 
+                            <select 
                                 id="target-url"
-                                v-model="form.targetUrl"
-                                placeholder="https://api.example.com/endpoint"
+                                v-model="selection.targetUrl"
                                 required
                             >
-                            <small>The URL endpoint to test</small>
+                                <option value="">-- Select URL --</option>
+                                <option 
+                                    v-for="url in availableUrls" 
+                                    :key="url"
+                                    :value="url"
+                                >
+                                    {{ url }}
+                                </option>
+                            </select>
+                            <small>URL endpoint to test</small>
                         </div>
 
-                        <!-- Duration and Users -->
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="duration">
-                                    Duration (seconds) <span class="required">*</span>
-                                </label>
-                                <input 
-                                    type="number" 
-                                    id="duration"
-                                    v-model.number="form.duration"
-                                    min="1"
-                                    max="3600"
-                                    required
+                        <!-- Scenario Selection -->
+                        <div class="form-group">
+                            <label for="scenario">
+                                Scenario <span class="required">*</span>
+                            </label>
+                            <select 
+                                id="scenario"
+                                v-model="selection.scenario"
+                                @change="onScenarioChange"
+                                required
+                            >
+                                <option value="">-- Select Scenario --</option>
+                                <option 
+                                    v-for="(config, key) in testConfig.scenarioConfig" 
+                                    :key="key"
+                                    :value="key"
                                 >
-                                <small>How long to run the test</small>
-                            </div>
+                                    {{ config.label }}
+                                </option>
+                            </select>
+                            <small v-if="selectedScenario">
+                                {{ selectedScenario.description }}
+                            </small>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="users">
-                                    Virtual Users <span class="required">*</span>
-                                </label>
-                                <input 
-                                    type="number" 
-                                    id="users"
-                                    v-model.number="form.users"
-                                    min="1"
-                                    max="1000"
-                                    required
-                                >
-                                <small>Concurrent users to simulate</small>
+                        <!-- Load Configuration Fields (will be dynamic in Step 7) -->
+                        <div v-if="selection.loadType" class="config-preview">
+                            <h3>Load Configuration Preview</h3>
+                            <div class="field-preview">
+                                <pre>{{ JSON.stringify(selectedLoadConfig, null, 2) }}</pre>
+                            </div>
+                        </div>
+
+                        <!-- Scenario Fields Preview (will be dynamic in Step 8) -->
+                        <div v-if="selection.scenario && selectedScenarioFields" class="config-preview">
+                            <h3>Scenario Configuration Preview</h3>
+                            <div class="field-preview">
+                                <pre>{{ JSON.stringify(selectedScenarioFields, null, 2) }}</pre>
                             </div>
                         </div>
 
@@ -74,7 +156,7 @@
                         <button 
                             type="submit" 
                             class="btn btn-primary" 
-                            :disabled="isSubmitting"
+                            :disabled="isSubmitting || !isFormValid"
                         >
                             <span v-if="!isSubmitting">▶️ Run Performance Test</span>
                             <span v-else>⏳ Triggering...</span>
