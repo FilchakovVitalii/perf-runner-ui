@@ -87,21 +87,9 @@
                     </div>
                 </section>
 
-                <!-- Collapsible Manual Configuration Header -->
-                <section class="config-section">
-                    <div class="section-header collapsible" @click="toggleManualConfig">
-                        <h2>
-                            <span class="toggle-icon">{{ manualConfigExpanded ? '▼' : '▶' }}</span>
-                            Manual Configuration
-                            <span v-if="activePreset" class="preset-badge">
-                                Using: {{ getPresetName(activePreset) }}
-                            </span>
-                        </h2>
-                    </div>
                 <!-- Configuration Form -->
                 <section class="config-section">
-                    <h2>Test Configuration</h2>
-
+                    
                     <!-- Loading State -->
                     <div v-if="configLoading" class="loading-state">
                         <p>⏳ Loading configuration...</p>
@@ -116,10 +104,23 @@
                         </button>
                     </div>
 
-                    <!-- Configuration Form -->
-                    <div v-show="manualConfigExpanded" class="collapsible-content">
+                    <!-- Manual Configuration (when loaded) -->
+                    <div v-else>
+                        <!-- Collapsible Header -->
+                        <div class="section-header collapsible" @click="toggleManualConfig">
+                            <h2>
+                                <span class="toggle-icon">{{ manualConfigExpanded ? '▼' : '▶' }}</span>
+                                Manual Configuration
+                                <span v-if="activePreset" class="preset-badge">
+                                    Using: {{ getPresetName(activePreset) }}
+                                </span>
+                            </h2>
+                        </div>
 
-                         <form @submit.prevent="handleSubmit" v-else>
+                        <!-- Collapsible Content -->
+                        <div v-show="manualConfigExpanded" class="collapsible-content">
+
+                            <form @submit.prevent="handleSubmit">
 
                         <!-- ========================================
                              SELECTION DROPDOWNS
