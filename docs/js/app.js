@@ -312,22 +312,42 @@ createApp({
 
         /**
          * Detect field type from value
+         * Priority: 1) metadata.type override, 2) auto-detect from value
          */
         detectFieldType(value, metadata) {
-            // Use metadata type if available
+            // Allow metadata to override for edge cases (select, textarea, url, etc.)
             if (metadata.type) {
-                // Normalize type names
                 const type = metadata.type.toLowerCase();
-                if (type === 'boolean') return 'boolean';  // Keep as 'boolean'
-                if (type === 'string') return 'text';      // Normalize to 'text'
+                console.log(`Using metadata type override: ${type} for value:`, value);
                 return type;
             }
 
-            // Detect from value
-            if (typeof value === 'boolean') return 'boolean';  // Changed from 'checkbox'
-            if (typeof value === 'number') return 'number';
-            if (typeof value === 'string') return 'text';
+            // Auto-detect from value type
+            const valueType = typeof value;
 
+            if (valueType === 'boolean') {
+                return 'boolean';
+            }
+
+            if (valueType === 'number') {
+                return 'number';
+            }
+
+            if (valueType === 'string') {
+                // Future: could detect special formats here
+                // if (value.startsWith('http')) return 'url';
+                // if (value.includes('@')) return 'email';
+                return 'text';
+            }
+
+            // Future: handle arrays, objects, etc.
+            if (Array.isArray(value)) {
+                console.warn('Array type detected, defaulting to text:', value);
+                return 'text';
+            }
+
+            // Fallback
+            console.warn('Unknown type, defaulting to text:', valueType, value);
             return 'text';
         },
 
