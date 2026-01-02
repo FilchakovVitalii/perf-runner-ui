@@ -727,3 +727,130 @@ input:valid:not(:placeholder-shown) {
         padding: 16px;
     }
 }
+
+/* ============================================
+   Output Section Enhancements (Step 8B)
+   ============================================ */
+
+.output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.output-header h2 {
+    margin: 0;
+}
+
+/* Format Selector */
+.format-selector {
+    display: flex;
+    gap: 8px;
+    background: var(--gray-200);
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.format-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+    font-weight: 500;
+    user-select: none;
+}
+
+.format-option:hover {
+    background: var(--gray-300);
+}
+
+.format-option input[type="radio"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+.format-option input[type="radio"]:checked + span {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Output Container */
+.output-container {
+    position: relative;
+    background: var(--gray-900);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.output-content {
+    margin: 0;
+    padding: 24px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #e6e6e6;
+    background: var(--gray-900);
+    overflow-x: auto;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Output Help */
+.output-help {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(102, 126, 234, 0.1);
+    border-left: 3px solid var(--primary);
+    border-radius: 6px;
+}
+
+.output-help small {
+    color: var(--gray-700);
+    line-height: 1.6;
+}
+
+.output-help code {
+    background: var(--gray-200);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: var(--gray-800);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .output-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .format-selector {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Update old json-output styles for consistency */
+.json-output {
+    margin: 0;
+    padding: 24px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #e6e6e6;
+    background: var(--gray-900);
+    border-radius: 10px;
+    overflow-x: auto;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;
+}

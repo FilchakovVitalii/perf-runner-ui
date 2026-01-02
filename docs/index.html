@@ -233,14 +233,39 @@
                     </form>
                 </section>
 
-                <!-- JSON Output -->
+                <!-- Configuration Output -->
                 <section class="output-section">
-                    <h2>Generated Configuration</h2>
-                    <div class="json-container">
-                        <pre id="json-output" class="json-output">{{ formattedConfig }}</pre>
-                        <button type="button" class="btn-icon" @click="copyJSON" title="Copy JSON">
+                    <div class="output-header">
+                        <h2>Generated Configuration</h2>
+
+                        <!-- Format Selector -->
+                        <div class="format-selector">
+                            <label class="format-option">
+                                <input type="radio" name="output-format" value="json" v-model="outputFormat">
+                                <span>JSON</span>
+                            </label>
+                            <label class="format-option">
+                                <input type="radio" name="output-format" value="env" v-model="outputFormat">
+                                <span>ENV</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="output-container">
+                        <pre class="output-content">{{ formattedOutput }}</pre>
+                        <button type="button" class="btn-icon" @click="copyOutput"
+                            :title="'Copy ' + outputFormat.toUpperCase()">
                             {{ copyButtonText }}
                         </button>
+                    </div>
+
+                    <!-- Format Help -->
+                    <div class="output-help" v-if="outputFormat === 'env'">
+                        <small>
+                            💡 <strong>Usage:</strong>
+                            <code>source config.env</code> or
+                            <code>export $(cat config.env | xargs)</code>
+                        </small>
                     </div>
                 </section>
 

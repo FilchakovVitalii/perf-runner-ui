@@ -42,6 +42,9 @@ createApp({
                 scenario: []
             },
 
+            // Output format
+            outputFormat: 'json',
+
             // UI state
             isSubmitting: false,
             copyButtonText: '📋',
@@ -127,20 +130,8 @@ createApp({
         },
 
         /**
-         * Generate formatted JSON configuration
-         */
-        formattedConfig() {
-            if (!this.isFormValid) {
-                return 'Select all required options to generate configuration...';
-            }
-
-            const config = this.currentConfig;
-            return JSON.stringify(config, null, 2);
-        },
-
-        /**
-         * Get current configuration as object
-         */
+        * Get current configuration as object
+        */
         currentConfig() {
             return {
                 loadType: this.selection.loadType,
@@ -151,7 +142,30 @@ createApp({
                 scenarioFields: { ...this.scenarioData },
                 timestamp: new Date().toISOString()
             };
+        },
+
+        /**
+     * Generate formatted output based on selected format
+     */
+        formattedOutput() {
+            if (!this.isFormValid) {
+                return 'Select all required options to generate configuration...';
+            }
+
+            if (this.outputFormat === 'env') {
+                return this.generateEnvFormat();
+            } else {
+                return this.generateJsonFormat();
+            }
+        },
+
+        /**
+         * Legacy: Keep for backward compatibility
+         */
+        formattedConfig() {
+            return this.formattedOutput;
         }
+
     },
 
     // ============================================
@@ -308,6 +322,131 @@ createApp({
                     min: this.getMinValue(key, metadata)
                 };
             });
+        },
+        
+        /**
+         * Generate JSON format output
+         */
+        generateJsonFormat() {
+            const config = this.currentConfig;
+            return JSON.stringify(config, null, 2);
+        },
+
+        /**
+         * Generate ENV format output
+         */
+        generateEnvFormat() {
+            const config = this.currentConfig;
+            const lines = [];
+
+            // Header
+            lines.push('# Performance Test Configuration');
+            lines.push(`# Generated: ${config.timestamp}`);
+            lines.push('');
+
+            // Load Type
+            lines.push('# Load Configuration');
+            lines.push(`LOAD_TYPE=${config.loadType}`);
+
+            // Load Config Fields
+            Object.entries(config.loadConfig).forEach(([key, value]) => {
+                const envKey = this.toEnvKey('LOAD', key);
+                const envValue = this.toEnvValue(value);
+                lines.push(`${envKey}=${envValue}`);
+            });
+            lines.push('');
+
+            // Environment
+            lines.push('# Environment');
+            lines.push(`ENVIRONMENT=${config.environment}`);
+            lines.push(`TARGET_URL=${this.escapeEnvValue(config.target_url)}`);
+            lines.push('');
+
+            // Scenario
+            lines.push('# Scenario');
+            lines.push(`SCENARIO=${this.escapeEnvValue(config.scenario)}`);
+
+            // Scenario Fields
+            if (Object.keys(config.scenarioFields).length > 0) {
+                Object.entries(config.scenarioFields).forEach(([key, value]) => {
+                    const envKey = this.toEnvKey('SCENARIO', key);
+                    const envValue = this.toEnvValue(value);
+                    lines.push(`${envKey}=${envValue}`);
+                });
+                lines.push('');
+            }
+
+            // Metadata
+            lines.push('# Metadata');
+            lines.push(`TIMESTAMP=${config.timestamp}`);
+
+            return lines.join('\n');
+        },
+
+        /**
+         * Convert field name to ENV variable name
+         */
+        toEnvKey(prefix, fieldName) {
+            // Convert camelCase or snake_case to UPPER_SNAKE_CASE
+            const envName = fieldName
+                .replace(/([A-Z])/g, '_$1')  // camelCase to snake_case
+                .toUpperCase()
+                .replace(/^_/, '');  // Remove leading underscore
+
+            return `${prefix}_${envName}`;
+        },
+
+        /**
+         * Convert value to ENV format
+         */
+        toEnvValue(value) {
+            if (typeof value === 'boolean') {
+                return value.toString();
+            }
+            if (typeof value === 'number') {
+                return value.toString();
+            }
+            if (typeof value === 'string') {
+                return this.escapeEnvValue(value);
+            }
+            return String(value);
+        },
+
+        /**
+         * Escape ENV value if needed
+         */
+        escapeEnvValue(value) {
+            // If value contains spaces or special chars, quote it
+            if (/[\s$"'`\\]/.test(value)) {
+                return `"${value.replace(/"/g, '\\"')}"`;
+            }
+            return value;
+        },
+
+        /**
+         * Copy output to clipboard
+         */
+        async copyOutput() {
+            try {
+                await navigator.clipboard.writeText(this.formattedOutput);
+                this.copyButtonText = '✅';
+
+                setTimeout(() => {
+                    this.copyButtonText = '📋';
+                }, 2000);
+
+                console.log(`✅ ${this.outputFormat.toUpperCase()} copied to clipboard`);
+            } catch (err) {
+                console.error('Copy failed:', err);
+                this.showStatus('Failed to copy to clipboard', 'error');
+            }
+        },
+
+        /**
+         * Legacy: Keep for backward compatibility
+         */
+        async copyJSON() {
+            return this.copyOutput();
         },
 
         /**
