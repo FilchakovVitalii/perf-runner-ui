@@ -1,6 +1,6 @@
 /**
  * Performance Test Runner - Vue.js Application
- * Step 6: Configuration loading and dynamic dropdowns
+ * Step 7: Dynamic form field generation with validation
  */
 
 const { createApp } = Vue;
@@ -28,11 +28,18 @@ createApp({
                 scenario: ''
             },
             
-            // Legacy form data (will be replaced by dynamic fields in Step 7)
-            form: {
-                targetUrl: '',
-                duration: 60,
-                users: 10
+            // Dynamic field data
+            loadData: {},
+            scenarioData: {},
+            
+            // Generated field definitions
+            loadConfigFields: [],
+            scenarioConfigFields: [],
+            
+            // Validation
+            validationErrors: {
+                load: [],
+                scenario: []
             },
             
             // UI state
@@ -112,6 +119,14 @@ createApp({
         },
 
         /**
+         * Check if there are validation errors
+         */
+        hasValidationErrors() {
+            return this.validationErrors.load.length > 0 ||
+                   this.validationErrors.scenario.length > 0;
+        },
+
+        /**
          * Generate formatted JSON configuration
          */
         formattedConfig() {
@@ -119,16 +134,7 @@ createApp({
                 return 'Select all required options to generate configuration...';
             }
 
-            const config = {
-                loadType: this.selection.loadType,
-                loadConfig: this.selectedLoadConfig,
-                environment: this.selection.environment,
-                targetUrl: this.selection.targetUrl,
-                scenario: this.selection.scenario,
-                scenarioFields: this.selectedScenarioFields,
-                timestamp: new Date().toISOString()
-            };
-            
+            const config = this.currentConfig;
             return JSON.stringify(config, null, 2);
         },
 
@@ -138,13 +144,95 @@ createApp({
         currentConfig() {
             return {
                 loadType: this.selection.loadType,
-                loadConfig: this.selectedLoadConfig,
+                loadConfig: { ...this.loadData },
                 environment: this.selection.environment,
                 target_url: this.selection.targetUrl,
                 scenario: this.selection.scenario,
-                scenarioFields: this.selectedScenarioFields,
+                scenarioFields: { ...this.scenarioData },
                 timestamp: new Date().toISOString()
             };
+        }
+    },
+
+    // ============================================
+    // Watchers - React to Data Changes
+    // ============================================
+    watch: {
+        /**
+         * Watch load type changes
+         */
+        'selection.loadType'(newType) {
+            if (!newType || !this.testConfig) return;
+            
+            console.log('Load type changed to:', newType);
+            
+            const config = this.testConfig.loadConfig[newType];
+            
+            // Extract field values (exclude label, description)
+            const { label, description, ...fieldValues } = config;
+            
+            // Clone values to loadData
+            this.loadData = { ...fieldValues };
+            
+            // Generate field definitions
+            this.loadConfigFields = this.generateFields(
+                fieldValues,
+                this.testConfig.fieldMetadata
+            );
+            
+            console.log('Generated fields:', this.loadConfigFields);
+            console.log('Load data:', this.loadData);
+            
+            // Validate
+            this.validateLoadConfig();
+        },
+
+        /**
+         * Watch environment changes
+         */
+        'selection.environment'(newEnv) {
+            console.log('Environment changed to:', newEnv);
+            
+            // Reset URL when environment changes
+            this.selection.targetUrl = '';
+            
+            // Auto-select first URL if only one available
+            if (this.availableUrls.length === 1) {
+                this.selection.targetUrl = this.availableUrls[0];
+            }
+        },
+
+        /**
+         * Watch scenario changes
+         */
+        'selection.scenario'(newScenario) {
+            if (!newScenario || !this.testConfig) return;
+            
+            console.log('Scenario changed to:', newScenario);
+            
+            const fields = this.testConfig.scenarioConfig[newScenario].fields;
+            
+            // Clone values to scenarioData
+            this.scenarioData = { ...fields };
+            
+            // Generate field definitions
+            this.scenarioConfigFields = this.generateFields(
+                fields,
+                this.testConfig.fieldMetadata
+            );
+            
+            console.log('Scenario fields:', this.scenarioConfigFields);
+            console.log('Scenario data:', this.scenarioData);
+        },
+
+        /**
+         * Watch loadData changes for validation
+         */
+        loadData: {
+            handler() {
+                this.validateLoadConfig();
+            },
+            deep: true
         }
     },
 
@@ -193,7 +281,7 @@ createApp({
                 }
                 
                 this.testConfig = config;
-                console.log('✅ Configuration loaded successfully:', config);
+                console.log('✅ Configuration loaded successfully');
                 
             } catch (error) {
                 console.error('❌ Failed to load configuration:', error);
@@ -204,36 +292,97 @@ createApp({
         },
 
         /**
-         * Handle load type change
+         * Generate field definitions from config object
          */
-        onLoadTypeChange() {
-            console.log('Load type changed:', this.selection.loadType);
-            console.log('Load config:', this.selectedLoadConfig);
+        generateFields(configObject, metadataSource) {
+            return Object.entries(configObject).map(([key, value]) => {
+                const metadata = metadataSource[key] || {};
+                
+                return {
+                    name: key,
+                    value: value,
+                    type: this.detectFieldType(value, metadata),
+                    label: metadata.label || this.formatLabel(key),
+                    help: metadata.help || '',
+                    unit: metadata.unit || '',
+                    min: this.getMinValue(key, metadata)
+                };
+            });
         },
 
         /**
-         * Handle environment change
+         * Detect field type from value
          */
-        onEnvironmentChange() {
-            console.log('Environment changed:', this.selection.environment);
-            console.log('Available URLs:', this.availableUrls);
-            
-            // Reset URL selection when environment changes
-            this.selection.targetUrl = '';
-            
-            // Auto-select first URL if only one available
-            if (this.availableUrls.length === 1) {
-                this.selection.targetUrl = this.availableUrls[0];
+        detectFieldType(value, metadata) {
+            // Use metadata type if available
+            if (metadata.type) {
+                return metadata.type;
             }
+            
+            // Detect from value
+            if (typeof value === 'boolean') return 'checkbox';
+            if (typeof value === 'number') return 'number';
+            if (typeof value === 'string') return 'text';
+            
+            return 'text';
         },
 
         /**
-         * Handle scenario change
+         * Format field name to readable label
          */
-        onScenarioChange() {
-            console.log('Scenario changed:', this.selection.scenario);
-            console.log('Scenario config:', this.selectedScenario);
-            console.log('Scenario fields:', this.selectedScenarioFields);
+        formatLabel(fieldName) {
+            return fieldName
+                .replace(/([A-Z])/g, ' $1') // Add space before capitals
+                .replace(/_/g, ' ')          // Replace underscores with spaces
+                .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                .trim();
+        },
+
+        /**
+         * Get minimum value for validation
+         */
+        getMinValue(fieldName, metadata) {
+            if (fieldName === 'users') return 1;
+            if (fieldName.includes('duration') || fieldName.includes('Duration')) return 0;
+            if (fieldName.includes('ramp') || fieldName.includes('Ramp')) return 0;
+            return undefined;
+        },
+
+        /**
+         * Validate load configuration
+         */
+        validateLoadConfig() {
+            const errors = [];
+            
+            // Validate users >= 1
+            if (this.loadData.users !== undefined && this.loadData.users < 1) {
+                errors.push('Users must be at least 1');
+            }
+            
+            // Validate duration >= 0
+            if (this.loadData.duration !== undefined && this.loadData.duration < 0) {
+                errors.push('Duration cannot be negative');
+            }
+            
+            // Validate duration >= rampUp
+            if (this.loadData.duration !== undefined && 
+                this.loadData.rampUp !== undefined &&
+                this.loadData.duration < this.loadData.rampUp) {
+                errors.push('Duration must be greater than or equal to Ramp-Up time');
+            }
+            
+            // Validate minPause <= maxPause
+            if (this.loadData.minPause !== undefined && 
+                this.loadData.maxPause !== undefined &&
+                this.loadData.minPause > this.loadData.maxPause) {
+                errors.push('Min Pause cannot be greater than Max Pause');
+            }
+            
+            this.validationErrors.load = errors;
+            
+            if (errors.length > 0) {
+                console.log('⚠️ Validation errors:', errors);
+            }
         },
 
         /**
@@ -244,6 +393,11 @@ createApp({
             
             if (!this.isFormValid) {
                 this.showStatus('Please select all required options', 'error');
+                return;
+            }
+            
+            if (this.hasValidationErrors) {
+                this.showStatus('Please fix validation errors before submitting', 'error');
                 return;
             }
             
@@ -338,6 +492,8 @@ createApp({
                     <p><strong>📊 Configuration:</strong></p>
                     <ul>
                         <li>Load Type: <code>${config.loadType}</code></li>
+                        <li>Users: ${config.loadConfig.users}</li>
+                        <li>Duration: ${config.loadConfig.duration}s</li>
                         <li>Environment: <code>${config.environment}</code></li>
                         <li>Target: <code>${this.escapeHtml(config.target_url)}</code></li>
                         <li>Scenario: <code>${config.scenario}</code></li>
@@ -510,4 +666,4 @@ createApp({
 // Console Utilities
 // ============================================
 console.log('💡 Vue app available via: window.vueApp');
-console.log('💡 Try: vueApp.testConfig, vueApp.selection');
+console.log('💡 Try: vueApp.loadData, vueApp.scenarioData, vueApp.validateLoadConfig()');
