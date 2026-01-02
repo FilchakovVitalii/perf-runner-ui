@@ -19,6 +19,85 @@
             </header>
 
             <main>
+                <!-- Presets Section -->
+                <section class="presets-section" v-if="!configLoading && !configError">
+                    <h2>🚀 Quick Start</h2>
+                    
+                    <!-- Built-in Presets -->
+                    <div class="presets-group">
+                        <h3>Built-in Presets</h3>
+                        <div class="presets-grid">
+                            <button
+                                v-for="preset in builtInPresets"
+                                :key="preset.id"
+                                type="button"
+                                class="btn-preset"
+                                :class="{ 'active': activePreset === preset.id }"
+                                @click="loadPreset(preset)"
+                                :title="preset.description"
+                            >
+                                <span class="preset-icon">{{ preset.icon }}</span>
+                                <span class="preset-name">{{ preset.name }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- User Presets -->
+                    <div class="presets-group" v-if="userPresets.length > 0">
+                        <h3>My Saved Presets</h3>
+                        <div class="user-presets-list">
+                            <div 
+                                v-for="preset in userPresets" 
+                                :key="preset.id"
+                                class="user-preset-item"
+                            >
+                                <button
+                                    type="button"
+                                    class="btn-preset"
+                                    :class="{ 'active': activePreset === preset.id }"
+                                    @click="loadPreset(preset)"
+                                    :title="preset.description || 'Custom preset'"
+                                >
+                                    <span class="preset-icon">💾</span>
+                                    <span class="preset-name">{{ preset.name }}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn-preset-delete"
+                                    @click="deletePreset(preset.id)"
+                                    title="Delete preset"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save Preset Button -->
+                    <div class="preset-actions">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            @click="openSavePresetModal"
+                            :disabled="!isFormValid"
+                        >
+                            💾 Save Current Configuration
+                        </button>
+                        <small v-if="!isFormValid">Configure all options to save as preset</small>
+                    </div>
+                </section>
+
+                <!-- Collapsible Manual Configuration Header -->
+                <section class="config-section">
+                    <div class="section-header collapsible" @click="toggleManualConfig">
+                        <h2>
+                            <span class="toggle-icon">{{ manualConfigExpanded ? '▼' : '▶' }}</span>
+                            Manual Configuration
+                            <span v-if="activePreset" class="preset-badge">
+                                Using: {{ getPresetName(activePreset) }}
+                            </span>
+                        </h2>
+                    </div>
                 <!-- Configuration Form -->
                 <section class="config-section">
                     <h2>Test Configuration</h2>
@@ -38,7 +117,9 @@
                     </div>
 
                     <!-- Configuration Form -->
-                    <form @submit.prevent="handleSubmit" v-else>
+                    <div v-show="manualConfigExpanded" class="collapsible-content">
+
+                         <form @submit.prevent="handleSubmit" v-else>
 
                         <!-- ========================================
                              SELECTION DROPDOWNS
@@ -230,7 +311,9 @@
                             <span v-if="!isSubmitting">▶️ Run Performance Test</span>
                             <span v-else>⏳ Triggering...</span>
                         </button>
-                    </form>
+                        </form>
+                    </div><!-- End collapsible-content -->
+
                 </section>
 
                 <!-- Configuration Output -->
@@ -311,6 +394,52 @@
                     </button>
                     <button type="button" class="btn btn-primary" @click="saveToken">
                         Save Token
+                    </button>
+                </div>
+            </div>
+        </div>
+                <!-- Save Preset Modal -->
+        <div class="modal" v-if="savePresetModal.visible" @click.self="closeSavePresetModal">
+            <div class="modal-content">
+                <h3>💾 Save Configuration as Preset</h3>
+                <p>Save your current configuration for quick access later.</p>
+                
+                <div class="form-group">
+                    <label for="preset-name">Preset Name</label>
+                    <input 
+                        type="text" 
+                        id="preset-name"
+                        v-model="savePresetModal.name"
+                        @keyup.enter="savePreset"
+                        placeholder="My Custom Test Config"
+                        maxlength="50"
+                    >
+                    <small>{{ savePresetModal.name.length }}/50 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="preset-description">Description (optional)</label>
+                    <input 
+                        type="text" 
+                        id="preset-description"
+                        v-model="savePresetModal.description"
+                        placeholder="What is this preset for?"
+                        maxlength="100"
+                    >
+                    <small>{{ savePresetModal.description.length }}/100 characters</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" @click="closeSavePresetModal">
+                        Cancel
+                    </button>
+                    <button 
+                        type="button" 
+                        class="btn btn-primary" 
+                        @click="savePreset"
+                        :disabled="!savePresetModal.name.trim()"
+                    >
+                        💾 Save Preset
                     </button>
                 </div>
             </div>

@@ -45,6 +45,19 @@ createApp({
             // Output format
             outputFormat: 'json',
 
+            // Presets
+            builtInPresets: [],
+            userPresets: [],
+            activePreset: null,
+            manualConfigExpanded: true,
+
+            // Save preset modal
+            savePresetModal: {
+                visible: false,
+                name: '',
+                description: ''
+            },
+
             // UI state
             isSubmitting: false,
             copyButtonText: '📋',
@@ -180,6 +193,11 @@ createApp({
 
             console.log('Load type changed to:', newType);
 
+            // Clear active preset when manually changing
+            if (this.manualConfigExpanded) {
+                this.activePreset = null;
+            }
+
             const config = this.testConfig.loadConfig[newType];
 
             // Extract field values (exclude label, description)
@@ -260,6 +278,11 @@ createApp({
         // Load test configuration
         await this.loadConfiguration();
 
+        // Initialize presets after config is loaded
+        if (this.testConfig) {
+            this.initializePresets();
+        }
+
         // Check for existing token
         this.checkToken();
 
@@ -306,6 +329,271 @@ createApp({
         },
 
         /**
+        * Initialize built-in presets
+         */
+        initializePresets() {
+            // Built-in presets
+            this.builtInPresets = [
+                {
+                    id: 'smoke-sandbox',
+                    name: 'Quick Smoke',
+                    icon: '🔥',
+                    description: 'Fast smoke test on sandbox environment',
+                    config: {
+                        selections: {
+                            loadType: 'smoke',
+                            environment: 'sandbox',
+                            scenario: 'project.scenario.ScenarioName'
+                        }
+                    }
+                },
+                {
+                    id: 'capacity-stage',
+                    name: 'Capacity Stage',
+                    icon: '📊',
+                    description: 'Full capacity test on staging environment',
+                    config: {
+                        selections: {
+                            loadType: 'capacity',
+                            environment: 'stage',
+                            scenario: 'project.scenario.ScenarioName'
+                        }
+                    }
+                },
+                {
+                    id: 'longevity-sandbox',
+                    name: 'Longevity',
+                    icon: '⏱️',
+                    description: 'Long-running stability test on sandbox',
+                    config: {
+                        selections: {
+                            loadType: 'longevity',
+                            environment: 'sandbox',
+                            scenario: 'project.scenario.ScenarioName'
+                        }
+                    }
+                },
+                {
+                    id: 'quick-validation',
+                    name: 'Quick Validation',
+                    icon: '🎯',
+                    description: 'Quick validation test with minimal config',
+                    config: {
+                        selections: {
+                            loadType: 'smoke',
+                            environment: 'sandbox',
+                            scenario: 'project.scenario.ScenarioNoAdditionalFields'
+                        }
+                    }
+                }
+            ];
+
+            // Load user presets from localStorage
+            this.loadUserPresets();
+
+            console.log('✅ Presets initialized:', {
+                builtIn: this.builtInPresets.length,
+                user: this.userPresets.length
+            });
+        },
+
+        /**
+         * Load user presets from localStorage
+         */
+        loadUserPresets() {
+            try {
+                const stored = localStorage.getItem('perf_runner_presets');
+                if (stored) {
+                    this.userPresets = JSON.parse(stored);
+                    console.log('📂 Loaded user presets:', this.userPresets.length);
+                }
+            } catch (error) {
+                console.error('Failed to load user presets:', error);
+                this.userPresets = [];
+            }
+        },
+
+        /**
+         * Save user presets to localStorage
+         */
+        saveUserPresets() {
+            try {
+                localStorage.setItem('perf_runner_presets', JSON.stringify(this.userPresets));
+                console.log('💾 Saved user presets');
+            } catch (error) {
+                console.error('Failed to save user presets:', error);
+            }
+        },
+
+        /**
+         * Load a preset configuration
+         */
+        loadPreset(preset) {
+            console.log('📂 Loading preset:', preset.name);
+
+            const config = preset.config;
+
+            // Load selections
+            if (config.selections) {
+                this.selection.loadType = config.selections.loadType || '';
+                this.selection.environment = config.selections.environment || '';
+                this.selection.scenario = config.selections.scenario || '';
+
+                // Wait for URL list to populate, then select
+                this.$nextTick(() => {
+                    if (config.selections.targetUrl) {
+                        this.selection.targetUrl = config.selections.targetUrl;
+                    } else if (this.availableUrls.length > 0) {
+                        // Auto-select first URL
+                        this.selection.targetUrl = this.availableUrls[0];
+                    }
+                });
+            }
+
+            // Load field overrides (if any)
+            if (config.loadData) {
+                this.$nextTick(() => {
+                    Object.assign(this.loadData, config.loadData);
+                });
+            }
+
+            if (config.scenarioData) {
+                this.$nextTick(() => {
+                    Object.assign(this.scenarioData, config.scenarioData);
+                });
+            }
+
+            // Set active preset
+            this.activePreset = preset.id;
+
+            // Collapse manual config
+            this.manualConfigExpanded = false;
+
+            // Show success message
+            this.showStatus(`✅ Loaded preset: ${preset.name}`, 'success');
+
+            console.log('✅ Preset loaded successfully');
+        },
+
+        /**
+         * Get preset name by ID
+         */
+        getPresetName(presetId) {
+            const preset = [...this.builtInPresets, ...this.userPresets]
+                .find(p => p.id === presetId);
+            return preset ? preset.name : '';
+        },
+
+        /**
+         * Toggle manual configuration visibility
+         */
+        toggleManualConfig() {
+            this.manualConfigExpanded = !this.manualConfigExpanded;
+        },
+
+        /**
+         * Open save preset modal
+         */
+        openSavePresetModal() {
+            this.savePresetModal.visible = true;
+            this.savePresetModal.name = '';
+            this.savePresetModal.description = '';
+
+            this.$nextTick(() => {
+                document.getElementById('preset-name')?.focus();
+            });
+        },
+
+        /**
+         * Close save preset modal
+         */
+        closeSavePresetModal() {
+            this.savePresetModal.visible = false;
+        },
+
+        /**
+         * Save current configuration as preset
+         */
+        savePreset() {
+            const name = this.savePresetModal.name.trim();
+
+            if (!name) {
+                alert('Please enter a preset name');
+                return;
+            }
+
+            // Check if name already exists
+            if (this.userPresets.some(p => p.name === name)) {
+                if (!confirm(`A preset named "${name}" already exists. Overwrite it?`)) {
+                    return;
+                }
+                // Remove existing
+                this.userPresets = this.userPresets.filter(p => p.name !== name);
+            }
+
+            // Create preset
+            const preset = {
+                id: 'user-' + Date.now(),
+                name: name,
+                description: this.savePresetModal.description.trim(),
+                created: new Date().toISOString(),
+                config: {
+                    selections: {
+                        loadType: this.selection.loadType,
+                        environment: this.selection.environment,
+                        targetUrl: this.selection.targetUrl,
+                        scenario: this.selection.scenario
+                    },
+                    loadData: { ...this.loadData },
+                    scenarioData: { ...this.scenarioData }
+                }
+            };
+
+            // Add to user presets
+            this.userPresets.push(preset);
+
+            // Save to localStorage
+            this.saveUserPresets();
+
+            // Close modal
+            this.closeSavePresetModal();
+
+            // Set as active
+            this.activePreset = preset.id;
+
+            // Show success
+            this.showStatus(`✅ Preset "${name}" saved successfully!`, 'success');
+
+            console.log('💾 Preset saved:', preset);
+        },
+
+        /**
+         * Delete a user preset
+         */
+        deletePreset(presetId) {
+            const preset = this.userPresets.find(p => p.id === presetId);
+
+            if (!preset) return;
+
+            if (!confirm(`Delete preset "${preset.name}"?`)) {
+                return;
+            }
+
+            // Remove from list
+            this.userPresets = this.userPresets.filter(p => p.id !== presetId);
+
+            // Save to localStorage
+            this.saveUserPresets();
+
+            // Clear active if this was active
+            if (this.activePreset === presetId) {
+                this.activePreset = null;
+            }
+
+            console.log('🗑️ Preset deleted:', preset.name);
+        },
+
+        /**
          * Generate field definitions from config object
          */
         generateFields(configObject, metadataSource) {
@@ -323,7 +611,7 @@ createApp({
                 };
             });
         },
-        
+
         /**
          * Generate JSON format output
          */
