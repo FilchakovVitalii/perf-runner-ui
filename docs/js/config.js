@@ -1,16 +1,18 @@
 const CONFIG = {
-    // Your private repository details
-    REPO_OWNER: 'FilchakovVitalii',  // ⚠️ Must be exact
+    // Your repository details
+    REPO_OWNER: 'FilchakovVitalii',
     REPO_NAME: 'perf-runner',
     WORKFLOW_FILE: 'perf-test.yml',
     BRANCH: 'main',
-    
-    // GitHub API endpoint
+    // GitHub API
     API_BASE: 'https://api.github.com',
-    
-    // Local storage key for token
+    // Storage
     TOKEN_STORAGE_KEY: 'perf_runner_github_token',
-    
-    // Version
-    VERSION: '1.0.0-step4'
+    // App version
+    VERSION: '2.0.0 (Vue.js)'
 };
+
+// Make available globally for Vue
+if (typeof window !== 'undefined') {
+    window.CONFIG = CONFIG;
+}

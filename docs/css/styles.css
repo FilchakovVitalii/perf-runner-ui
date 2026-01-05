@@ -435,3 +435,1128 @@ footer a:hover {
     overflow-x: auto;
     margin: 10px 0;
 }
+
+/* ============================================
+   Vue.js Specific Styles
+   ============================================ */
+
+/* Hide content until Vue is ready */
+[v-cloak] {
+    display: none;
+}
+
+/* Version badge in header */
+.version {
+    font-size: 0.85em;
+    opacity: 0.8;
+    margin-top: 4px;
+}
+
+/* Disabled button state (Vue controlled) */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Loading spinner for button */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+button:disabled::before {
+    content: '';
+    display: inline-block;
+    margin-right: 8px;
+}
+/* ============================================
+   Loading & Error States (Step 6)
+   ============================================ */
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--gray-100);
+    border-radius: 8px;
+    border: 2px dashed var(--gray-300);
+}
+
+.loading-state p {
+    font-size: 1.2em;
+    color: var(--gray-600);
+}
+
+.error-state {
+    border-color: var(--error);
+}
+
+.error-state p:first-child {
+    font-size: 1.2em;
+    color: var(--error);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.error-message {
+    color: var(--gray-600);
+    margin-bottom: 20px;
+}
+
+/* ============================================
+   Configuration Preview Sections
+   ============================================ */
+.config-preview {
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--gray-100);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+}
+
+.config-preview h3 {
+    font-size: 1.1em;
+    color: var(--gray-800);
+    margin-bottom: 12px;
+}
+
+.field-preview {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+}
+
+.field-preview pre {
+    margin: 0;
+    font-size: 0.85em;
+    color: var(--gray-700);
+    overflow-x: auto;
+}
+
+/* ============================================
+   Warning Text
+   ============================================ */
+.warning-text {
+    color: var(--warning) !important;
+    font-weight: 600;
+    display: block;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 4px;
+    border-left: 3px solid var(--warning);
+}
+
+/* ============================================
+   Select Dropdown Styling
+   ============================================ */
+select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 1em;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+select:disabled {
+    background: var(--gray-100);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Option styling */
+option {
+    padding: 8px;
+}
+
+option:disabled {
+    color: var(--gray-400);
+}
+
+/* ============================================
+   Dynamic Field Groups (Step 7)
+   ============================================ */
+
+.field-group {
+    margin: 32px 0;
+    padding: 24px;
+    background: var(--gray-100);
+    border-radius: 10px;
+    border: 2px solid var(--gray-300);
+}
+
+.field-group-title {
+    font-size: 1.2em;
+    color: var(--gray-800);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--gray-300);
+    font-weight: 600;
+}
+
+.field-group-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.field-group-content .form-group {
+    margin-bottom: 20px;
+}
+
+.field-group-content .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================
+   Field Styling Enhancements
+   ============================================ */
+
+.field-unit {
+    color: var(--gray-600);
+    font-weight: 400;
+    font-size: 0.9em;
+}
+
+/* Checkbox styling */
+.checkbox-group {
+    margin-bottom: 16px !important;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 8px 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px;
+    cursor: pointer;
+    transform: scale(1.2);
+}
+
+.checkbox-text {
+    user-select: none;
+}
+
+/* No fields message */
+.no-fields {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--gray-600);
+    background: var(--gray-100);
+    border-radius: 6px;
+    border: 2px dashed var(--gray-300);
+}
+
+.no-fields p {
+    margin: 0;
+    font-size: 1em;
+}
+
+/* ============================================
+   Validation Errors
+   ============================================ */
+
+.validation-errors {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(220, 53, 69, 0.1);
+    border-left: 4px solid var(--error);
+    border-radius: 6px;
+}
+
+.validation-errors p {
+    color: var(--error);
+    margin: 6px 0;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.validation-errors p:first-child {
+    margin-top: 0;
+}
+
+.validation-errors p:last-child {
+    margin-bottom: 0;
+}
+
+/* Input validation states */
+input:invalid:not(:placeholder-shown):not(:focus) {
+    border-color: var(--error);
+    background: rgba(220, 53, 69, 0.05);
+}
+
+input:valid:not(:placeholder-shown) {
+    border-color: var(--success);
+}
+
+/* ============================================
+   Responsive Grid for Fields
+   ============================================ */
+
+.form-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .form-row-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .field-group {
+        padding: 16px;
+    }
+    
+    .field-group-content {
+        padding: 16px;
+    }
+}
+
+/* ============================================
+   Output Section Enhancements (Step 8B)
+   ============================================ */
+
+.output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.output-header h2 {
+    margin: 0;
+}
+
+/* Format Selector */
+.format-selector {
+    display: flex;
+    gap: 8px;
+    background: var(--gray-200);
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.format-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+    font-weight: 500;
+    user-select: none;
+}
+
+.format-option:hover {
+    background: var(--gray-300);
+}
+
+.format-option input[type="radio"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+.format-option input[type="radio"]:checked + span {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Output Container */
+.output-container {
+    position: relative;
+    background: var(--gray-900);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.output-content {
+    margin: 0;
+    padding: 24px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #e6e6e6;
+    background: var(--gray-900);
+    overflow-x: auto;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Output Help */
+.output-help {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(102, 126, 234, 0.1);
+    border-left: 3px solid var(--primary);
+    border-radius: 6px;
+}
+
+.output-help small {
+    color: var(--gray-700);
+    line-height: 1.6;
+}
+
+.output-help code {
+    background: var(--gray-200);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: var(--gray-800);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .output-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .format-selector {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Update old json-output styles for consistency */
+.json-output {
+    margin: 0;
+    padding: 24px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #e6e6e6;
+    background: var(--gray-900);
+    border-radius: 10px;
+    overflow-x: auto;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+/* ============================================
+   Presets Section (Step 8C)
+   ============================================ */
+
+.presets-section {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 12px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.presets-section h2 {
+    margin-bottom: 24px;
+    color: var(--gray-800);
+}
+
+.presets-group {
+    margin-bottom: 24px;
+}
+
+.presets-group:last-of-type {
+    margin-bottom: 16px;
+}
+
+.presets-group h3 {
+    font-size: 1em;
+    color: var(--gray-700);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+/* Presets Grid */
+.presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+/* Preset Button */
+.btn-preset {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 500;
+    color: var(--gray-800);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.btn-preset:hover {
+    border-color: var(--primary);
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-preset.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-preset.active .preset-icon {
+    filter: brightness(0) invert(1);
+}
+
+.preset-icon {
+    font-size: 1.3em;
+    line-height: 1;
+}
+
+.preset-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* User Presets List */
+.user-presets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-preset-item {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.user-preset-item .btn-preset {
+    flex: 1;
+}
+
+.btn-preset-delete {
+    padding: 14px 16px;
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-preset-delete:hover {
+    border-color: var(--error);
+    background: rgba(220, 53, 69, 0.05);
+    transform: scale(1.05);
+}
+
+/* Preset Actions */
+.preset-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.preset-actions button {
+    width: auto;
+}
+
+.preset-actions small {
+    color: var(--gray-600);
+    font-style: italic;
+}
+
+/* Collapsible Section Header */
+.section-header.collapsible {
+    cursor: pointer;
+    user-select: none;
+    padding: 16px 20px;
+    margin: -24px -24px 24px -24px;
+    background: var(--gray-100);
+    border-radius: 8px 8px 0 0;
+    transition: background 0.2s ease;
+}
+
+.section-header.collapsible:hover {
+    background: var(--gray-200);
+}
+
+.section-header.collapsible h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toggle-icon {
+    font-size: 0.8em;
+    color: var(--gray-600);
+    transition: transform 0.2s ease;
+}
+
+.preset-badge {
+    font-size: 0.7em;
+    font-weight: 500;
+    color: var(--primary);
+    background: rgba(102, 126, 234, 0.1);
+    padding: 4px 12px;
+    border-radius: 12px;
+    margin-left: auto;
+}
+
+/* Collapsible Content */
+.collapsible-content {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .presets-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .preset-actions {
+        width: 100%;
+    }
+    
+    .preset-actions button {
+        width: 100%;
+    }
+}
+
+/* ============================================
+   Step 9A: Two-Column Layout + Tabs
+   ============================================ */
+
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--gray-300);
+    padding-bottom: 0;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    bottom: -2px;
+}
+
+.tab-button:hover:not(.disabled) {
+    color: var(--primary);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.tab-button.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tab-button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Two-Column Layout */
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.right-column {
+    position: sticky;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0 0 16px 0;
+}
+
+/* Compact Presets Section */
+.presets-section-compact {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid rgba(102, 126, 234, 0.15);
+}
+
+/* Preset Carousel (Horizontal Scroll) */
+.preset-carousel {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 0 8px 0;
+    margin-bottom: 16px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.preset-carousel::-webkit-scrollbar {
+    height: 6px;
+}
+
+.preset-carousel::-webkit-scrollbar-track {
+    background: var(--gray-200);
+    border-radius: 3px;
+}
+
+.preset-carousel::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 3px;
+}
+
+.preset-carousel::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+/* Preset Cards */
+.preset-card {
+    min-width: 90px;
+    padding: 16px 12px;
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.preset-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.preset-card.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.preset-icon-large {
+    font-size: 2em;
+    line-height: 1;
+}
+
+.preset-card.active .preset-icon-large {
+    filter: brightness(0) invert(1);
+}
+
+.preset-name-compact {
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* User Presets Dropdown */
+.user-presets-dropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-presets-dropdown label {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.preset-select-group {
+    display: flex;
+    gap: 8px;
+}
+
+.preset-select-group select {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+
+.btn-mini {
+    padding: 8px 12px;
+    font-size: 0.9em;
+    border: 2px solid var(--gray-300);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-mini.btn-delete:hover {
+    border-color: var(--error);
+    background: rgba(220, 53, 69, 0.1);
+}
+
+/* Compact Config Section */
+.config-section-compact {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Form Layout - Inline Groups */
+.field-group-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.form-group-mini {
+    flex: 0 0 calc(33.333% - 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group-mini label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.form-group-mini input {
+    padding: 8px 10px;
+    font-size: 0.9em;
+}
+
+.field-unit-mini {
+    font-size: 0.75em;
+    color: var(--gray-500);
+    font-weight: 400;
+}
+
+/* Checkbox Inline */
+.form-group-checkbox-inline {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+}
+
+.form-group-checkbox-inline label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.form-group-checkbox-inline input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+/* Form Row Split (Environment + URL) */
+.form-row-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+/* Scenario Fields Inline */
+.scenario-fields-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Output Section Compact */
+.output-section-compact {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.output-header-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.output-header-compact .section-title {
+    margin: 0;
+}
+
+/* Format Toggle */
+.format-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--gray-200);
+    padding: 3px;
+    border-radius: 6px;
+}
+
+.format-option {
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.format-option input[type="radio"] {
+    display: none;
+}
+
+.format-option.active {
+    background: var(--primary);
+    color: white;
+}
+
+.format-option:not(.active):hover {
+    background: var(--gray-300);
+}
+
+/* Output Container Compact */
+.output-container-compact {
+    position: relative;
+    background: var(--gray-900);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.output-content {
+    margin: 0;
+    padding: 16px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+    color: #e6e6e6;
+    background: var(--gray-900);
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.btn-icon-compact {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-icon-compact:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.output-tip {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(102, 126, 234, 0.08);
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+.output-tip code {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+/* Status Section Compact */
+.status-section-compact {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.status-content-compact {
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.status-content-compact.status-success {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--success);
+    border-left: 3px solid var(--success);
+}
+
+.status-content-compact.status-error {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--error);
+    border-left: 3px solid var(--error);
+}
+
+.status-content-compact.status-info {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary);
+    border-left: 3px solid var(--primary);
+}
+
+/* Tips Section */
+.tips-section {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.tips-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 0.95em;
+    color: var(--gray-700);
+}
+
+.tips-section ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tips-section li {
+    font-size: 0.85em;
+    color: var(--gray-600);
+    padding: 4px 0;
+}
+
+.tips-section kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    font-family: monospace;
+    background: white;
+    border: 1px solid var(--gray-300);
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1200px) {
+    .two-column-layout {
+        grid-template-columns: 380px 1fr;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 992px) {
+    .two-column-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .right-column {
+        position: static;
+        max-height: none;
+    }
+    
+    .form-group-mini {
+        flex: 0 0 calc(50% - 6px);
+    }
+}
+
+@media (max-width: 768px) {
+    .tab-button {
+        padding: 10px 16px;
+        font-size: 0.9em;
+    }
+    
+    .preset-card {
+        min-width: 80px;
+        padding: 12px 8px;
+    }
+    
+    .form-row-split {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-group-mini {
+        flex: 0 0 100%;
+    }
+}
