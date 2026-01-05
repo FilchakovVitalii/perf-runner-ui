@@ -63,6 +63,11 @@ createApp({
             isSubmitting: false,
             copyButtonText: '📋',
 
+            // SPA Navigation
+            activeSection: 'run',
+            isScrolled: false,
+            scrollProgress: 0,
+
             // Status display
             status: {
                 visible: false,
@@ -273,7 +278,7 @@ createApp({
     // Lifecycle Hooks
     // ============================================
     async mounted() {
-        console.log('🚀 Performance Test Runner (Vue.js) initialized');
+        console.log('🚀 Performance Test Runner (SPA) initialized');
         console.log('📝 Configuration:', this.config);
 
         // Load test configuration
@@ -287,14 +292,101 @@ createApp({
         // Check for existing token
         this.checkToken();
 
+        // Add scroll listener
+        window.addEventListener('scroll', this.handleScroll);
+        this.handleScroll(); // Initial check
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Enter: Submit form
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (this.isFormValid && !this.isSubmitting) {
+                    this.handleSubmit();
+                }
+            }
+
+            // Ctrl+S: Save preset
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                if (this.isFormValid) {
+                    this.openSavePresetModal();
+                }
+            }
+        });
+
         // Make available in console for debugging
         window.vueApp = this;
+    },
+
+    /**
+     * Cleanup on unmount
+     */
+    beforeUnmount() {
+        window.removeEventListener('scroll', this.handleScroll);
     },
 
     // ============================================
     // Methods
     // ============================================
     methods: {
+
+        /**
+        * Scroll to section
+        */
+        scrollToSection(sectionName) {
+            const sectionId = `${sectionName}-section`;
+            const element = document.getElementById(sectionId);
+
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        },
+
+        /**
+         * Handle scroll events
+         */
+        handleScroll() {
+            // Update scrolled state
+            this.isScrolled = window.scrollY > 20;
+
+            // Update scroll progress
+            const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
+            this.scrollProgress = (window.scrollY / windowHeight) * 100;
+
+            // Update active section (scroll spy)
+            const sections = ['run', 'history', 'ai'];
+            const headerOffset = 150;
+
+            for (const section of sections) {
+                const element = document.getElementById(`${section}-section`);
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    if (rect.top <= headerOffset && rect.bottom >= headerOffset) {
+                        this.activeSection = section;
+                        break;
+                    }
+                }
+            }
+        },
+
+        /**
+         * Open settings modal (placeholder)
+         */
+        openSettingsModal() {
+            alert('Settings coming soon!');
+        },
+
+        /**
+         * Open help modal (placeholder)
+         */
+        openHelpModal() {
+            alert('Help coming soon!');
+        },
+
         /**
          * Load configuration from config.json
          */
