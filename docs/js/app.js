@@ -49,6 +49,7 @@ createApp({
             builtInPresets: [],
             userPresets: [],
             activePreset: null,
+            selectedUserPresetId: null,
             manualConfigExpanded: true,
 
             // Save preset modal
@@ -326,6 +327,26 @@ createApp({
             } finally {
                 this.configLoading = false;
             }
+        },
+
+        /**
+        * Load user preset from dropdown
+        */
+        loadUserPreset(event) {
+            const presetId = event.target.value;
+
+            if (!presetId) return;
+
+            const preset = this.userPresets.find(p => p.id === presetId);
+            if (preset) {
+                this.selectedUserPresetId = presetId;
+                this.loadPreset(preset);
+            }
+
+            // Reset dropdown after loading
+            this.$nextTick(() => {
+                event.target.value = '';
+            });
         },
 
         /**
