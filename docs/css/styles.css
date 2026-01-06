@@ -23,7 +23,7 @@
     --gray-800: #1f2937;
     --gray-900: #111827;
     
-    --header-height: 60px;
+    --header-height: 110px;
     --section-max-width: 1600px;
     --content-padding: 60px;
     
@@ -57,7 +57,7 @@ body {
 }
 
 /* ============================================
-   APP HEADER (Sticky - Single Line)
+   APP HEADER (Sticky)
    ============================================ */
 
 .app-header {
@@ -68,8 +68,6 @@ body {
     background: white;
     z-index: 1000;
     transition: box-shadow var(--transition-speed), backdrop-filter var(--transition-speed);
-    height: var(--header-height);
-    border-bottom: 1px solid var(--gray-200);
 }
 
 .app-header.scrolled {
@@ -78,40 +76,32 @@ body {
     background: rgba(255, 255, 255, 0.95);
 }
 
-/* Header Unified Layout */
-.header-unified {
+/* Header Top */
+.header-top {
+    height: 60px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.header-content {
     max-width: var(--section-max-width);
     margin: 0 auto;
     padding: 0 var(--content-padding);
     height: 100%;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 40px;
-}
-
-.header-left {
-    flex-shrink: 0;
+    align-items: center;
 }
 
 .app-title {
-    font-size: 1.3em;
+    font-size: 1.4em;
     font-weight: 700;
     color: var(--gray-800);
     margin: 0;
-    white-space: nowrap;
 }
 
-.header-center {
-    display: flex;
-    gap: 4px;
-    flex: 0 0 auto;
-}
-
-.header-right {
+.header-actions {
     display: flex;
     gap: 8px;
-    flex-shrink: 0;
 }
 
 .btn-icon-header {
@@ -130,17 +120,33 @@ body {
 }
 
 /* Navigation Tabs */
+.app-navigation {
+    height: 50px;
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.nav-content {
+    max-width: var(--section-max-width);
+    margin: 0 auto;
+    padding: 0 var(--content-padding);
+    height: 100%;
+    display: flex;
+    gap: 4px;
+}
+
 .nav-tab {
-    padding: 8px 20px;
+    padding: 0 24px;
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
-    font-size: 0.95em;
+    font-size: 1em;
     font-weight: 600;
     color: var(--gray-600);
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    bottom: -2px;
 }
 
 .nav-tab:hover {
@@ -195,7 +201,7 @@ body {
     );
 }
 
-/* Presets Section Compact (Unified) */
+/* Presets Section Compact */
 .presets-section-compact {
     background: linear-gradient(135deg, 
         rgba(102, 126, 234, 0.08) 0%, 
@@ -214,46 +220,35 @@ body {
     margin: 0 0 16px 0;
 }
 
-/* Preset Carousel Unified */
-.preset-carousel-unified {
+/* Preset Carousel */
+.preset-carousel {
     display: flex;
     gap: 12px;
     overflow-x: auto;
     padding: 4px 0 12px 0;
+    margin-bottom: 16px;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    align-items: stretch;
 }
 
-.preset-carousel-unified::-webkit-scrollbar {
+.preset-carousel::-webkit-scrollbar {
     height: 6px;
 }
 
-.preset-carousel-unified::-webkit-scrollbar-track {
+.preset-carousel::-webkit-scrollbar-track {
     background: var(--gray-200);
     border-radius: 3px;
 }
 
-.preset-carousel-unified::-webkit-scrollbar-thumb {
+.preset-carousel::-webkit-scrollbar-thumb {
     background: var(--gray-400);
     border-radius: 3px;
 }
 
-.preset-carousel-unified::-webkit-scrollbar-thumb:hover {
+.preset-carousel::-webkit-scrollbar-thumb:hover {
     background: var(--gray-500);
 }
 
-/* Preset Divider */
-.preset-divider {
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    color: var(--gray-400);
-    font-size: 1.8em;
-    flex-shrink: 0;
-}
-
-/* Preset Cards */
 .preset-card {
     min-width: 90px;
     padding: 16px 12px;
@@ -267,7 +262,6 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
-    position: relative;
 }
 
 .preset-card:hover {
@@ -298,44 +292,52 @@ body {
     white-space: nowrap;
 }
 
-/* User Preset with Delete Button */
-.preset-card-user {
-    min-width: 110px;
-}
-
-.preset-delete-btn {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    background: rgba(220, 53, 69, 0.1);
-    border: 1px solid rgba(220, 53, 69, 0.3);
-    border-radius: 4px;
-    font-size: 0.8em;
-    cursor: pointer;
-    opacity: 0;
-    transition: all 0.2s ease;
+/* User Presets Dropdown */
+.user-presets-dropdown {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.preset-card-user:hover .preset-delete-btn {
-    opacity: 1;
+.user-presets-dropdown label {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--gray-700);
 }
 
-.preset-delete-btn:hover {
-    background: rgba(220, 53, 69, 0.2);
+.preset-select-group {
+    display: flex;
+    gap: 8px;
+}
+
+.preset-select-group select {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.9em;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    background: white;
+}
+
+.btn-mini {
+    padding: 8px 12px;
+    font-size: 0.9em;
+    border: 2px solid var(--gray-300);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-mini.btn-delete:hover {
     border-color: var(--error);
-    transform: scale(1.1);
+    background: rgba(220, 53, 69, 0.1);
 }
 
 /* Two-Column Layout */
 .two-column-layout {
     display: grid;
-    grid-template-columns: 540px 1fr;
+    grid-template-columns: 420px 1fr;
     gap: 32px;
     align-items: start;
 }
@@ -407,47 +409,6 @@ body {
     color: var(--error);
 }
 
-/* Help Icon with Tooltip */
-.help-icon {
-    display: inline-block;
-    margin-left: 4px;
-    color: var(--gray-500);
-    cursor: help;
-    font-size: 0.85em;
-    position: relative;
-}
-
-.help-icon:hover {
-    color: var(--primary);
-}
-
-.help-icon::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-    background: var(--gray-900);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    z-index: 1000;
-    max-width: 250px;
-    white-space: normal;
-    text-align: center;
-    font-weight: normal;
-}
-
-.help-icon:hover::after {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-4px);
-}
-
 /* Inline Fields */
 .field-group-inline,
 .scenario-fields-inline {
@@ -455,7 +416,6 @@ body {
     flex-wrap: wrap;
     gap: 12px;
     margin: 16px 0;
-    align-items: flex-end;
 }
 
 .form-group-mini {
@@ -472,16 +432,10 @@ body {
 }
 
 .form-group-mini input {
-    padding: 10px 12px;
-    font-size: 0.95em;
+    padding: 8px 10px;
+    font-size: 0.9em;
     border: 2px solid var(--gray-300);
     border-radius: 6px;
-    transition: border-color 0.2s ease;
-}
-
-.form-group-mini input:focus {
-    outline: none;
-    border-color: var(--primary);
 }
 
 .field-unit-mini {
@@ -494,8 +448,7 @@ body {
 .form-group-checkbox-inline {
     flex: 0 0 auto;
     display: flex;
-    align-items: flex-end;
-    padding-bottom: 10px;
+    align-items: center;
 }
 
 .form-group-checkbox-inline label {
@@ -505,7 +458,6 @@ body {
     font-size: 0.9em;
     cursor: pointer;
     font-weight: 500;
-    margin-bottom: 0;
 }
 
 .form-group-checkbox-inline input[type="checkbox"] {
@@ -851,7 +803,6 @@ body {
     padding: 12px;
     border-radius: 6px;
     margin-top: 12px;
-    flex: 0 0 100%;
 }
 
 .validation-errors p {
@@ -871,7 +822,7 @@ body {
     }
     
     .two-column-layout {
-        grid-template-columns: 480px 1fr;
+        grid-template-columns: 380px 1fr;
         gap: 24px;
     }
 }
@@ -896,17 +847,21 @@ body {
 
 @media (max-width: 768px) {
     :root {
-        --header-height: 60px;
+        --header-height: 100px;
         --content-padding: 20px;
     }
     
     .app-title {
-        font-size: 1em;
+        font-size: 1.1em;
+    }
+    
+    .header-top {
+        height: 50px;
     }
     
     .nav-tab {
-        padding: 6px 12px;
-        font-size: 0.85em;
+        padding: 0 16px;
+        font-size: 0.9em;
     }
     
     .section-content {
@@ -933,27 +888,16 @@ body {
     .placeholder-title {
         font-size: 1.5em;
     }
-    
-    .header-unified {
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-    
-    .header-center {
-        order: 3;
-        flex: 1 0 100%;
-        justify-content: center;
-    }
 }
 
 @media (max-width: 480px) {
-    .header-unified {
+    .nav-content {
         padding: 0 20px;
     }
     
     .nav-tab {
-        padding: 6px 10px;
-        font-size: 0.8em;
+        padding: 0 12px;
+        font-size: 0.85em;
     }
 }
 
