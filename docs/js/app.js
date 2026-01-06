@@ -713,6 +713,11 @@ createApp({
             return Object.entries(configObject).map(([key, value]) => {
                 const metadata = metadataSource[key] || {};
 
+                // Warn if metadata is missing
+                if (!metadataSource[key]) {
+                    console.warn(`⚠️ Missing metadata for field: "${key}" - using auto-generated defaults`);
+                }
+
                 return {
                     name: key,
                     value: value,
