@@ -11,24 +11,34 @@
 <body>
     <!-- Vue App Container -->
     <div id="app" v-cloak>
-
+        
         <!-- Sticky App Header (Single Line) -->
         <header class="app-header" :class="{ 'scrolled': isScrolled }">
             <div class="header-unified">
                 <div class="header-left">
                     <h1 class="app-title">🚀 Performance Test Runner</h1>
                 </div>
-
+                
                 <nav class="header-center">
-                    <button class="nav-tab" :class="{ active: activeSection === 'run' }"
-                        @click="scrollToSection('run')">
+                    <button 
+                        class="nav-tab" 
+                        :class="{ active: activeSection === 'run' }"
+                        @click="scrollToSection('run')"
+                    >
                         ⚡ Run
                     </button>
-                    <button class="nav-tab" :class="{ active: activeSection === 'history' }"
-                        @click="scrollToSection('history')">
+                    <button 
+                        class="nav-tab" 
+                        :class="{ active: activeSection === 'history' }"
+                        @click="scrollToSection('history')"
+                    >
                         📊 History
                     </button>
-                    <button class="nav-tab" :class="{ active: activeSection === 'ai' }" @click="scrollToSection('ai')">
+                    <button 
+                        class="nav-tab" 
+                        :class="{ active: activeSection === 'ai' }"
+                        @click="scrollToSection('ai')"
+                    >
                         🤖 AI Insights
                     </button>
                 </nav>
@@ -57,50 +67,63 @@
                 <div class="section-content">
 
                     <!-- Quick Start Presets (Unified) -->
-                    <div class="presets-section-compact"
-                        v-if="!configLoading && !configError && builtInPresets.length > 0">
-                        <h3 class="section-title">🚀 Quick Start</h3>
+<div class="presets-section-compact" v-if="!configLoading && !configError && builtInPresets.length > 0">
+    <h3 class="section-title">🚀 Quick Start</h3>
+    
+    <div class="preset-carousel-unified">
+        <!-- Built-in Presets -->
+        <button
+            v-for="preset in builtInPresets"
+            :key="preset.id"
+            type="button"
+            class="preset-card"
+            :class="{ 'active': activePreset === preset.id }"
+            @click="loadPreset(preset)"
+            :title="preset.description"
+        >
+            <span class="preset-icon-large">{{ preset.icon }}</span>
+            <span class="preset-name-compact">{{ preset.name }}</span>
+        </button>
 
-                        <div class="preset-carousel-unified">
-                            <!-- Built-in Presets -->
-                            <button v-for="preset in builtInPresets" :key="preset.id" type="button" class="preset-card"
-                                :class="{ 'active': activePreset === preset.id }" @click="loadPreset(preset)"
-                                :title="preset.description">
-                                <span class="preset-icon-large">{{ preset.icon }}</span>
-                                <span class="preset-name-compact">{{ preset.name }}</span>
-                            </button>
+        <!-- Divider (only show if there are user presets) -->
+        <div class="preset-divider" v-if="userPresets && userPresets.length > 0">
+            <span>|</span>
+        </div>
 
-                            <!-- Divider (only show if there are user presets) -->
-                            <div class="preset-divider" v-if="userPresets && userPresets.length > 0">
-                                <span>|</span>
-                            </div>
-
-                            <!-- User Presets (with safety check) -->
-                            <template v-if="userPresets && userPresets.length > 0">
-                                <button v-for="preset in userPresets" :key="preset.id" type="button"
-                                    class="preset-card preset-card-user"
-                                    :class="{ 'active': activePreset === preset.id }" @click="loadPreset(preset)"
-                                    :title="preset.description || preset.name">
-                                    <button class="preset-delete-btn" @click.stop="deletePreset(preset.id)"
-                                        title="Delete preset">
-                                        🗑️
-                                    </button>
-                                    <span class="preset-icon-large">💾</span>
-                                    <span class="preset-name-compact">{{ preset.name }}</span>
-                                </button>
-                            </template>
-                        </div>
-                    </div>
+        <!-- User Presets (with safety check) -->
+        <template v-if="userPresets && userPresets.length > 0">
+            <button
+                v-for="preset in userPresets"
+                :key="preset.id"
+                type="button"
+                class="preset-card preset-card-user"
+                :class="{ 'active': activePreset === preset.id }"
+                @click="loadPreset(preset)"
+                :title="preset.description || preset.name"
+            >
+                <button 
+                    class="preset-delete-btn"
+                    @click.stop="deletePreset(preset.id)"
+                    title="Delete preset"
+                >
+                    🗑️
+                </button>
+                <span class="preset-icon-large">💾</span>
+                <span class="preset-name-compact">{{ preset.name }}</span>
+            </button>
+        </template>
+    </div>
+</div>
 
                     <!-- Two-Column Layout -->
                     <div class="two-column-layout">
-
+                        
                         <!-- LEFT COLUMN: Configuration -->
                         <div class="left-column">
-
+                            
                             <!-- Configuration Form -->
                             <div class="config-card">
-
+                                
                                 <!-- Loading State -->
                                 <div v-if="configLoading" class="loading-state">
                                     <p>⏳ Loading configuration...</p>
@@ -125,8 +148,7 @@
                                         </label>
                                         <select id="load-type" v-model="selection.loadType" required>
                                             <option value="">-- Select --</option>
-                                            <option v-for="(config, key) in testConfig.loadConfig" :key="key"
-                                                :value="key">
+                                            <option v-for="(config, key) in testConfig.loadConfig" :key="key" :value="key">
                                                 {{ config.label }}
                                             </option>
                                         </select>
@@ -134,43 +156,58 @@
 
                                     <!-- Load Config Fields (Inline Groups) -->
                                     <div v-if="loadConfigFields.length > 0" class="field-group-inline">
-
+                                        
                                         <template v-for="(field, index) in loadConfigFields" :key="field.name">
                                             <!-- Number fields in rows of 3 -->
-                                            <div v-if="field.type === 'number'" class="form-group-mini">
+                                            <div 
+                                                v-if="field.type === 'number'"
+                                                class="form-group-mini"
+                                            >
                                                 <label :for="'load-' + field.name">
                                                     {{ field.label }}
-                                                    <span v-if="field.help" class="help-icon"
-                                                        :data-tooltip="field.help">ⓘ</span>
-                                                    <span v-if="field.unit" class="field-unit-mini">{{ field.unit
-                                                        }}</span>
+                                                    <span v-if="field.help" class="help-icon" :data-tooltip="field.help">ⓘ</span>
+                                                    <span v-if="field.unit" class="field-unit-mini">{{ field.unit }}</span>
                                                 </label>
-                                                <input :id="'load-' + field.name" type="number"
-                                                    v-model.number="loadData[field.name]" :min="field.min" required>
+                                                <input 
+                                                    :id="'load-' + field.name"
+                                                    type="number"
+                                                    v-model.number="loadData[field.name]"
+                                                    :min="field.min"
+                                                    required
+                                                >
                                             </div>
 
                                             <!-- Checkboxes inline -->
-                                            <div v-else-if="field.type === 'boolean'"
-                                                class="form-group-checkbox-inline">
+                                            <div 
+                                                v-else-if="field.type === 'boolean'"
+                                                class="form-group-checkbox-inline"
+                                            >
                                                 <label>
-                                                    <input type="checkbox" v-model="loadData[field.name]">
+                                                    <input 
+                                                        type="checkbox"
+                                                        v-model="loadData[field.name]"
+                                                    >
                                                     <span>
                                                         {{ field.label }}
-                                                        <span v-if="field.help" class="help-icon"
-                                                            :data-tooltip="field.help">ⓘ</span>
+                                                        <span v-if="field.help" class="help-icon" :data-tooltip="field.help">ⓘ</span>
                                                     </span>
                                                 </label>
                                             </div>
 
                                             <!-- Text fields full width -->
-                                            <div v-else class="form-group">
+                                            <div 
+                                                v-else
+                                                class="form-group"
+                                            >
                                                 <label :for="'load-' + field.name">
                                                     {{ field.label }}
-                                                    <span v-if="field.help" class="help-icon"
-                                                        :data-tooltip="field.help">ⓘ</span>
+                                                    <span v-if="field.help" class="help-icon" :data-tooltip="field.help">ⓘ</span>
                                                 </label>
-                                                <input :id="'load-' + field.name" type="text"
-                                                    v-model="loadData[field.name]">
+                                                <input 
+                                                    :id="'load-' + field.name"
+                                                    type="text"
+                                                    v-model="loadData[field.name]"
+                                                >
                                             </div>
                                         </template>
 
@@ -188,8 +225,7 @@
                                             <label for="environment">Environment <span class="required">*</span></label>
                                             <select id="environment" v-model="selection.environment" required>
                                                 <option value="">-- Select --</option>
-                                                <option v-for="(config, key) in testConfig.environment" :key="key"
-                                                    :value="key">
+                                                <option v-for="(config, key) in testConfig.environment" :key="key" :value="key">
                                                     {{ config.label }}
                                                 </option>
                                             </select>
@@ -211,8 +247,7 @@
                                         <label for="scenario">Scenario <span class="required">*</span></label>
                                         <select id="scenario" v-model="selection.scenario" required>
                                             <option value="">-- Select --</option>
-                                            <option v-for="(config, key) in testConfig.scenarioConfig" :key="key"
-                                                :value="key">
+                                            <option v-for="(config, key) in testConfig.scenarioConfig" :key="key" :value="key">
                                                 {{ config.label }}
                                             </option>
                                         </select>
@@ -227,8 +262,7 @@
                                                     <input type="checkbox" v-model="scenarioData[field.name]">
                                                     <span>
                                                         {{ field.label }}
-                                                        <span v-if="field.help" class="help-icon"
-                                                            :data-tooltip="field.help">ⓘ</span>
+                                                        <span v-if="field.help" class="help-icon" :data-tooltip="field.help">ⓘ</span>
                                                     </span>
                                                 </label>
                                             </div>
@@ -237,35 +271,46 @@
                                             <div v-else-if="field.type === 'number'" class="form-group-mini">
                                                 <label :for="'scenario-' + field.name">
                                                     {{ field.label }}
-                                                    <span v-if="field.help" class="help-icon"
-                                                        :data-tooltip="field.help">ⓘ</span>
+                                                    <span v-if="field.help" class="help-icon" :data-tooltip="field.help">ⓘ</span>
                                                 </label>
-                                                <input :id="'scenario-' + field.name" type="number"
-                                                    v-model.number="scenarioData[field.name]">
+                                                <input 
+                                                    :id="'scenario-' + field.name"
+                                                    type="number"
+                                                    v-model.number="scenarioData[field.name]"
+                                                >
                                             </div>
 
                                             <!-- Text -->
                                             <div v-else class="form-group">
                                                 <label :for="'scenario-' + field.name">
                                                     {{ field.label }}
-                                                    <span v-if="field.help" class="help-icon"
-                                                        :data-tooltip="field.help">ⓘ</span>
+                                                    <span v-if="field.help" class="help-icon" :data-tooltip="field.help">ⓘ</span>
                                                 </label>
-                                                <input :id="'scenario-' + field.name" type="text"
-                                                    v-model="scenarioData[field.name]">
+                                                <input 
+                                                    :id="'scenario-' + field.name"
+                                                    type="text"
+                                                    v-model="scenarioData[field.name]"
+                                                >
                                             </div>
                                         </template>
                                     </div>
 
                                     <!-- Action Buttons -->
                                     <div class="action-buttons">
-                                        <button type="submit" class="btn btn-primary btn-block"
-                                            :disabled="isSubmitting || !isFormValid || hasValidationErrors">
+                                        <button 
+                                            type="submit" 
+                                            class="btn btn-primary btn-block"
+                                            :disabled="isSubmitting || !isFormValid || hasValidationErrors"
+                                        >
                                             <span v-if="!isSubmitting">▶️ Run Test</span>
                                             <span v-else>⏳ Running...</span>
                                         </button>
-                                        <button type="button" class="btn btn-secondary btn-block"
-                                            @click="openSavePresetModal" :disabled="!isFormValid">
+                                        <button
+                                            type="button"
+                                            class="btn btn-secondary btn-block"
+                                            @click="openSavePresetModal"
+                                            :disabled="!isFormValid"
+                                        >
                                             💾 Save Preset
                                         </button>
                                     </div>
@@ -278,12 +323,12 @@
 
                         <!-- RIGHT COLUMN: Output & Status -->
                         <div class="right-column">
-
+                            
                             <!-- Configuration Output -->
                             <div class="output-card">
                                 <div class="output-header-compact">
                                     <h3 class="section-title">📄 Configuration</h3>
-
+                                    
                                     <!-- Format Toggle -->
                                     <div class="format-toggle">
                                         <label class="format-option" :class="{ active: outputFormat === 'json' }">
@@ -299,8 +344,12 @@
 
                                 <div class="output-container-compact">
                                     <pre class="output-content">{{ formattedOutput }}</pre>
-                                    <button type="button" class="btn-icon-compact" @click="copyOutput"
-                                        :title="'Copy ' + outputFormat.toUpperCase()">
+                                    <button 
+                                        type="button" 
+                                        class="btn-icon-compact" 
+                                        @click="copyOutput"
+                                        :title="'Copy ' + outputFormat.toUpperCase()"
+                                    >
                                         {{ copyButtonText }}
                                     </button>
                                 </div>
@@ -394,18 +443,29 @@
             <div class="modal-content">
                 <h3>💾 Save Configuration as Preset</h3>
                 <p>Save your current configuration for quick access later.</p>
-
+                
                 <div class="form-group">
                     <label for="preset-name">Preset Name</label>
-                    <input type="text" id="preset-name" v-model="savePresetModal.name" @keyup.enter="savePreset"
-                        placeholder="My Custom Test Config" maxlength="50">
+                    <input 
+                        type="text" 
+                        id="preset-name"
+                        v-model="savePresetModal.name"
+                        @keyup.enter="savePreset"
+                        placeholder="My Custom Test Config"
+                        maxlength="50"
+                    >
                     <small>{{ savePresetModal.name.length }}/50 characters</small>
                 </div>
 
                 <div class="form-group">
                     <label for="preset-description">Description (optional)</label>
-                    <input type="text" id="preset-description" v-model="savePresetModal.description"
-                        placeholder="What is this preset for?" maxlength="100">
+                    <input 
+                        type="text" 
+                        id="preset-description"
+                        v-model="savePresetModal.description"
+                        placeholder="What is this preset for?"
+                        maxlength="100"
+                    >
                     <small>{{ savePresetModal.description.length }}/100 characters</small>
                 </div>
 
@@ -413,8 +473,12 @@
                     <button type="button" class="btn btn-secondary" @click="closeSavePresetModal">
                         Cancel
                     </button>
-                    <button type="button" class="btn btn-primary" @click="savePreset"
-                        :disabled="!savePresetModal.name.trim()">
+                    <button 
+                        type="button" 
+                        class="btn btn-primary" 
+                        @click="savePreset"
+                        :disabled="!savePresetModal.name.trim()"
+                    >
                         💾 Save Preset
                     </button>
                 </div>
