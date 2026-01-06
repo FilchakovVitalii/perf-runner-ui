@@ -67,51 +67,53 @@
                 <div class="section-content">
 
                     <!-- Quick Start Presets (Unified) -->
-                    <div class="presets-section-compact" v-if="!configLoading && !configError">
-                        <h3 class="section-title">🚀 Quick Start</h3>
-                        
-                        <div class="preset-carousel-unified">
-                            <!-- Built-in Presets -->
-                            <button
-                                v-for="preset in builtInPresets"
-                                :key="preset.id"
-                                type="button"
-                                class="preset-card"
-                                :class="{ 'active': activePreset === preset.id }"
-                                @click="loadPreset(preset)"
-                                :title="preset.description"
-                            >
-                                <span class="preset-icon-large">{{ preset.icon }}</span>
-                                <span class="preset-name-compact">{{ preset.name }}</span>
-                            </button>
+<div class="presets-section-compact" v-if="!configLoading && !configError && builtInPresets.length > 0">
+    <h3 class="section-title">🚀 Quick Start</h3>
+    
+    <div class="preset-carousel-unified">
+        <!-- Built-in Presets -->
+        <button
+            v-for="preset in builtInPresets"
+            :key="preset.id"
+            type="button"
+            class="preset-card"
+            :class="{ 'active': activePreset === preset.id }"
+            @click="loadPreset(preset)"
+            :title="preset.description"
+        >
+            <span class="preset-icon-large">{{ preset.icon }}</span>
+            <span class="preset-name-compact">{{ preset.name }}</span>
+        </button>
 
-                            <!-- Divider -->
-                            <div class="preset-divider" v-if="userPresets.length > 0">
-                                <span>|</span>
-                            </div>
+        <!-- Divider (only show if there are user presets) -->
+        <div class="preset-divider" v-if="userPresets && userPresets.length > 0">
+            <span>|</span>
+        </div>
 
-                            <!-- User Presets -->
-                            <button
-                                v-for="preset in userPresets"
-                                :key="preset.id"
-                                type="button"
-                                class="preset-card preset-card-user"
-                                :class="{ 'active': activePreset === preset.id }"
-                                @click="loadPreset(preset)"
-                                :title="preset.description || preset.name"
-                            >
-                                <button 
-                                    class="preset-delete-btn"
-                                    @click.stop="deletePreset(preset.id)"
-                                    title="Delete preset"
-                                >
-                                    🗑️
-                                </button>
-                                <span class="preset-icon-large">💾</span>
-                                <span class="preset-name-compact">{{ preset.name }}</span>
-                            </button>
-                        </div>
-                    </div>
+        <!-- User Presets (with safety check) -->
+        <template v-if="userPresets && userPresets.length > 0">
+            <button
+                v-for="preset in userPresets"
+                :key="preset.id"
+                type="button"
+                class="preset-card preset-card-user"
+                :class="{ 'active': activePreset === preset.id }"
+                @click="loadPreset(preset)"
+                :title="preset.description || preset.name"
+            >
+                <button 
+                    class="preset-delete-btn"
+                    @click.stop="deletePreset(preset.id)"
+                    title="Delete preset"
+                >
+                    🗑️
+                </button>
+                <span class="preset-icon-large">💾</span>
+                <span class="preset-name-compact">{{ preset.name }}</span>
+            </button>
+        </template>
+    </div>
+</div>
 
                     <!-- Two-Column Layout -->
                     <div class="two-column-layout">
