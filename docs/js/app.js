@@ -49,7 +49,6 @@ createApp({
             builtInPresets: [],
             userPresets: [],
             activePreset: null,
-            selectedUserPresetId: null,
             manualConfigExpanded: true,
 
             // Save preset modal
@@ -422,26 +421,6 @@ createApp({
         },
 
         /**
-        * Load user preset from dropdown
-        */
-        loadUserPreset(event) {
-            const presetId = event.target.value;
-
-            if (!presetId) return;
-
-            const preset = this.userPresets.find(p => p.id === presetId);
-            if (preset) {
-                this.selectedUserPresetId = presetId;
-                this.loadPreset(preset);
-            }
-
-            // Reset dropdown after loading
-            this.$nextTick(() => {
-                event.target.value = '';
-            });
-        },
-
-        /**
         * Initialize built-in presets
          */
         initializePresets() {
@@ -702,6 +681,9 @@ createApp({
             if (this.activePreset === presetId) {
                 this.activePreset = null;
             }
+            
+            // Show feedback
+            this.showStatus(`🗑️ Preset "${preset.name}" deleted`, 'info');
 
             console.log('🗑️ Preset deleted:', preset.name);
         },
@@ -712,6 +694,11 @@ createApp({
         generateFields(configObject, metadataSource) {
             return Object.entries(configObject).map(([key, value]) => {
                 const metadata = metadataSource[key] || {};
+                
+                // Log warning if metadata is missing
+                if (!metadataSource[key]) {
+                    console.warn(`⚠️ Missing metadata for field: "${key}". Using auto-generated label.`);
+                }
 
                 return {
                     name: key,
@@ -841,13 +828,6 @@ createApp({
                 console.error('Copy failed:', err);
                 this.showStatus('Failed to copy to clipboard', 'error');
             }
-        },
-
-        /**
-         * Legacy: Keep for backward compatibility
-         */
-        async copyJSON() {
-            return this.copyOutput();
         },
 
         /**
@@ -1114,23 +1094,6 @@ createApp({
         },
 
         /**
-         * Copy JSON to clipboard
-         */
-        async copyJSON() {
-            try {
-                await navigator.clipboard.writeText(this.formattedConfig);
-                this.copyButtonText = '✅';
-
-                setTimeout(() => {
-                    this.copyButtonText = '📋';
-                }, 2000);
-            } catch (err) {
-                console.error('Copy failed:', err);
-                this.showStatus('Failed to copy to clipboard', 'error');
-            }
-        },
-
-        /**
          * Show status message
          */
         showStatus(message, type = 'info') {
@@ -1139,7 +1102,7 @@ createApp({
             this.status.message = message;
 
             this.$nextTick(() => {
-                const statusEl = document.querySelector('.status-section');
+                const statusEl = document.querySelector('.status-card');
                 if (statusEl) {
                     statusEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
