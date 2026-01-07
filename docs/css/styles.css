@@ -277,6 +277,7 @@ body {
 
 .preset-card.active .preset-icon-large {
     filter: brightness(0) invert(1);
+    opacity: 1;
 }
 
 /* Preset Divider */
@@ -375,6 +376,28 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+/* Form Section Highlights */
+.form-section-highlight {
+    background: linear-gradient(
+        135deg,
+        rgba(102, 126, 234, 0.03) 0%,
+        rgba(118, 75, 162, 0.03) 100%
+    );
+    border-left: 3px solid var(--primary);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.section-label {
+    font-size: 0.95em;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 /* Form Styling */
 .form-group {
     margin-bottom: 20px;
@@ -417,18 +440,70 @@ body {
     color: var(--error);
 }
 
-/* Help Icon */
-.help-icon {
-    display: inline-block;
-    margin-left: 4px;
-    font-size: 0.85em;
-    color: var(--gray-500);
+/* ============================================
+   Tooltips (Modern Best Practice)
+   ============================================ */
+
+.has-tooltip {
+    position: relative;
     cursor: help;
-    transition: color 0.2s ease;
 }
 
-.help-icon:hover {
-    color: var(--primary);
+.has-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gray-900);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-weight: 400;
+    line-height: 1.4;
+    max-width: 280px;
+    width: max-content;
+    white-space: normal;
+    word-wrap: break-word;
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.3s ease 0.3s; /* 0.3s delay before showing */
+}
+
+.has-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--gray-900);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1001;
+    transition: opacity 0.3s ease 0.3s;
+}
+
+.has-tooltip:hover::before,
+.has-tooltip:hover::after {
+    opacity: 1;
+}
+
+/* Prevent tooltip from going off-screen on right edge */
+.form-group-mini:nth-child(3n) .has-tooltip::before {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.form-group-mini:nth-child(3n) .has-tooltip::after {
+    left: auto;
+    right: 12px;
+    transform: none;
 }
 
 /* Inline Fields */
@@ -436,8 +511,8 @@ body {
 .scenario-fields-inline {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin: 16px 0;
+    gap: 14px;
+    margin: 16px 0 20px 0;
 }
 
 .form-group-mini {
@@ -448,9 +523,15 @@ body {
 }
 
 .form-group-mini label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     font-size: 0.85em;
     font-weight: 600;
     color: var(--gray-700);
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    margin-bottom: 4px;
 }
 
 .form-group-mini input {
@@ -460,6 +541,8 @@ body {
     border: 2px solid var(--gray-300);
     border-radius: 8px;
     transition: border-color 0.2s ease;
+    line-height: 1.5;
+    box-sizing: border-box;
 }
 
 .form-group-mini input:focus {
@@ -468,26 +551,27 @@ body {
 }
 
 .field-unit-mini {
-    font-size: 0.8em;
-    color: var(--gray-600);
+    font-size: 0.75em;
+    color: var(--gray-500);
     font-weight: 400;
-    margin-left: 2px;
+    margin-left: 0;
 }
 
-/* Checkbox Inline */
+/* Checkbox Inline - Subtle Styling */
 .form-group-checkbox-inline {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    padding: 8px 12px;
-    background: var(--gray-50);
+    padding: 6px 10px;
+    background: transparent;
     border-radius: 6px;
-    border: 2px solid var(--gray-200);
-    transition: border-color 0.2s ease;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
 }
 
 .form-group-checkbox-inline:hover {
-    border-color: var(--gray-300);
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
 }
 
 .form-group-checkbox-inline label {
@@ -501,9 +585,10 @@ body {
 }
 
 .form-group-checkbox-inline input[type="checkbox"] {
-    width: auto;
-    margin: 0;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
+    margin: 0;
 }
 
 /* Form Row Split */

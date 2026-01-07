@@ -55,7 +55,8 @@ createApp({
             savePresetModal: {
                 visible: false,
                 name: '',
-                description: ''
+                description: '',
+                icon: '🚀'
             },
 
             // UI state
@@ -590,6 +591,7 @@ createApp({
             this.savePresetModal.visible = true;
             this.savePresetModal.name = '';
             this.savePresetModal.description = '';
+            this.savePresetModal.icon = '🚀';
 
             this.$nextTick(() => {
                 document.getElementById('preset-name')?.focus();
@@ -628,6 +630,7 @@ createApp({
                 id: 'user-' + Date.now(),
                 name: name,
                 description: this.savePresetModal.description.trim(),
+                icon: this.savePresetModal.icon.trim() || '💾',
                 created: new Date().toISOString(),
                 config: {
                     selections: {
@@ -681,7 +684,7 @@ createApp({
             if (this.activePreset === presetId) {
                 this.activePreset = null;
             }
-            
+
             // Show feedback
             this.showStatus(`🗑️ Preset "${preset.name}" deleted`, 'info');
 
@@ -694,7 +697,7 @@ createApp({
         generateFields(configObject, metadataSource) {
             return Object.entries(configObject).map(([key, value]) => {
                 const metadata = metadataSource[key] || {};
-                
+
                 // Log warning if metadata is missing
                 if (!metadataSource[key]) {
                     console.warn(`⚠️ Missing metadata for field: "${key}". Using auto-generated label.`);
