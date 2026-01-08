@@ -258,6 +258,12 @@ body {
     flex-shrink: 0;
 }
 
+/* Ensure user preset cards are clickable */
+.preset-card-user {
+    cursor: pointer;
+    user-select: none;
+}
+
 .preset-card:hover {
     border-color: var(--primary);
     transform: translateY(-2px);

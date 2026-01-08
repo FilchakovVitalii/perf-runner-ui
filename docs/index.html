@@ -117,14 +117,16 @@
                 ></div>
 
                 <!-- User Presets -->
-                <button
+                <div
                   v-for="preset in userPresets"
                   :key="preset.id"
-                  type="button"
                   class="preset-card preset-card-user"
                   :class="{ 'active': activePreset === preset.id }"
                   @click="loadPreset(preset)"
                   :title="preset.description || preset.name"
+                  role="button"
+                  tabindex="0"
+                  @keyup.enter="loadPreset(preset)"
                 >
                   <span class="preset-icon-large">{{ preset.icon || '💾' }}</span>
                   <span class="preset-name-compact">{{ preset.name }}</span>
@@ -136,7 +138,7 @@
                   >
                     ×
                   </button>
-                </button>
+                </div>
               </div>
             </div>
 
@@ -295,7 +297,9 @@
                       <!-- Environment & URL (Side by side) -->
                       <div class="form-row-split">
                         <div class="form-group">
-                          <label for="environment">Environment <span class="required">*</span></label>
+                          <label for="environment"
+                            >Environment <span class="required">*</span></label
+                          >
                           <select
                             id="environment"
                             v-model="selection.environment"
@@ -654,7 +658,7 @@
               v-model="savePresetModal.icon"
               placeholder="e.g., 🚀 or 🎯"
               maxlength="4"
-              style="font-size: 1.5em; text-align: center;"
+              style="font-size: 1.5em; text-align: center"
               required
             />
             <small>Choose an emoji to represent this preset</small>
