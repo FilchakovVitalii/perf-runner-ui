@@ -2,7 +2,7 @@ const CONFIG = {
     // Your repository details
     REPO_OWNER: 'FilchakovVitalii',
     REPO_NAME: 'perf-runner',
-    WORKFLOW_FILE: 'perf-test.yml',
+    WORKFLOW_FILE: 'basic.yml',
     BRANCH: 'main',
     // GitHub API
     API_BASE: 'https://api.github.com',
