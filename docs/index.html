@@ -524,7 +524,25 @@
                     class="status-content-compact"
                     :class="'status-' + status.type"
                   >
-                    <span v-html="status.message"></span>
+                    <div class="status-body">
+                      <p v-for="(line, index) in status.lines" :key="index">
+                        {{ line }}
+                      </p>
+                      <ul v-if="status.list && status.list.length > 0">
+                        <li v-for="(item, index) in status.list" :key="index">
+                          {{ item }}
+                        </li>
+                      </ul>
+                      <a
+                        v-if="status.link"
+                        :href="status.link.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="status-link"
+                      >
+                        {{ status.link.text}} →
+                      </a>
+                    </div>
                   </div>
                 </div>
 
