@@ -49,19 +49,24 @@ createApp({
             builtInPresets: [],
             userPresets: [],
             activePreset: null,
-            selectedUserPresetId: null,
             manualConfigExpanded: true,
 
             // Save preset modal
             savePresetModal: {
                 visible: false,
                 name: '',
-                description: ''
+                description: '',
+                icon: '🚀'
             },
 
             // UI state
             isSubmitting: false,
             copyButtonText: '📋',
+
+            // SPA Navigation
+            activeSection: 'run',
+            isScrolled: false,
+            scrollProgress: 0,
 
             // Status display
             status: {
@@ -273,7 +278,7 @@ createApp({
     // Lifecycle Hooks
     // ============================================
     async mounted() {
-        console.log('🚀 Performance Test Runner (Vue.js) initialized');
+        console.log('🚀 Performance Test Runner (SPA) initialized');
         console.log('📝 Configuration:', this.config);
 
         // Load test configuration
@@ -287,14 +292,101 @@ createApp({
         // Check for existing token
         this.checkToken();
 
+        // Add scroll listener
+        window.addEventListener('scroll', this.handleScroll);
+        this.handleScroll(); // Initial check
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Enter: Submit form
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (this.isFormValid && !this.isSubmitting) {
+                    this.handleSubmit();
+                }
+            }
+
+            // Ctrl+S: Save preset
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                if (this.isFormValid) {
+                    this.openSavePresetModal();
+                }
+            }
+        });
+
         // Make available in console for debugging
         window.vueApp = this;
+    },
+
+    /**
+     * Cleanup on unmount
+     */
+    beforeUnmount() {
+        window.removeEventListener('scroll', this.handleScroll);
     },
 
     // ============================================
     // Methods
     // ============================================
     methods: {
+
+        /**
+        * Scroll to section
+        */
+        scrollToSection(sectionName) {
+            const sectionId = `${sectionName}-section`;
+            const element = document.getElementById(sectionId);
+
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        },
+
+        /**
+         * Handle scroll events
+         */
+        handleScroll() {
+            // Update scrolled state
+            this.isScrolled = window.scrollY > 20;
+
+            // Update scroll progress
+            const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
+            this.scrollProgress = (window.scrollY / windowHeight) * 100;
+
+            // Update active section (scroll spy)
+            const sections = ['run', 'history', 'ai'];
+            const headerOffset = 150;
+
+            for (const section of sections) {
+                const element = document.getElementById(`${section}-section`);
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    if (rect.top <= headerOffset && rect.bottom >= headerOffset) {
+                        this.activeSection = section;
+                        break;
+                    }
+                }
+            }
+        },
+
+        /**
+         * Open settings modal (placeholder)
+         */
+        openSettingsModal() {
+            alert('Settings coming soon!');
+        },
+
+        /**
+         * Open help modal (placeholder)
+         */
+        openHelpModal() {
+            alert('Help coming soon!');
+        },
+
         /**
          * Load configuration from config.json
          */
@@ -327,26 +419,6 @@ createApp({
             } finally {
                 this.configLoading = false;
             }
-        },
-
-        /**
-        * Load user preset from dropdown
-        */
-        loadUserPreset(event) {
-            const presetId = event.target.value;
-
-            if (!presetId) return;
-
-            const preset = this.userPresets.find(p => p.id === presetId);
-            if (preset) {
-                this.selectedUserPresetId = presetId;
-                this.loadPreset(preset);
-            }
-
-            // Reset dropdown after loading
-            this.$nextTick(() => {
-                event.target.value = '';
-            });
         },
 
         /**
@@ -519,6 +591,7 @@ createApp({
             this.savePresetModal.visible = true;
             this.savePresetModal.name = '';
             this.savePresetModal.description = '';
+            this.savePresetModal.icon = '🚀';
 
             this.$nextTick(() => {
                 document.getElementById('preset-name')?.focus();
@@ -557,6 +630,7 @@ createApp({
                 id: 'user-' + Date.now(),
                 name: name,
                 description: this.savePresetModal.description.trim(),
+                icon: this.savePresetModal.icon.trim() || '💾',
                 created: new Date().toISOString(),
                 config: {
                     selections: {
@@ -611,6 +685,9 @@ createApp({
                 this.activePreset = null;
             }
 
+            // Show feedback
+            this.showStatus(`🗑️ Preset "${preset.name}" deleted`, 'info');
+
             console.log('🗑️ Preset deleted:', preset.name);
         },
 
@@ -620,6 +697,11 @@ createApp({
         generateFields(configObject, metadataSource) {
             return Object.entries(configObject).map(([key, value]) => {
                 const metadata = metadataSource[key] || {};
+
+                // Log warning if metadata is missing
+                if (!metadataSource[key]) {
+                    console.warn(`⚠️ Missing metadata for field: "${key}". Using auto-generated label.`);
+                }
 
                 return {
                     name: key,
@@ -749,13 +831,6 @@ createApp({
                 console.error('Copy failed:', err);
                 this.showStatus('Failed to copy to clipboard', 'error');
             }
-        },
-
-        /**
-         * Legacy: Keep for backward compatibility
-         */
-        async copyJSON() {
-            return this.copyOutput();
         },
 
         /**
@@ -1022,23 +1097,6 @@ createApp({
         },
 
         /**
-         * Copy JSON to clipboard
-         */
-        async copyJSON() {
-            try {
-                await navigator.clipboard.writeText(this.formattedConfig);
-                this.copyButtonText = '✅';
-
-                setTimeout(() => {
-                    this.copyButtonText = '📋';
-                }, 2000);
-            } catch (err) {
-                console.error('Copy failed:', err);
-                this.showStatus('Failed to copy to clipboard', 'error');
-            }
-        },
-
-        /**
          * Show status message
          */
         showStatus(message, type = 'info') {
@@ -1047,7 +1105,7 @@ createApp({
             this.status.message = message;
 
             this.$nextTick(() => {
-                const statusEl = document.querySelector('.status-section');
+                const statusEl = document.querySelector('.status-card');
                 if (statusEl) {
                     statusEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }

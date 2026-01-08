@@ -1,420 +1,700 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <title>Performance Test Runner</title>
-    <link rel="stylesheet" href="css/styles.css">
-</head>
+    <link
+      rel="stylesheet"
+      href="css/styles.css"
+    />
+  </head>
 
-<body>
+  <body>
     <!-- Vue App Container -->
-    <div id="app" v-cloak>
-        <div class="container">
-            <header>
-                <h1>🚀 Performance Test Runner</h1>
-                <p class="subtitle">Configure and trigger performance tests</p>
-                <p class="version">{{ version }}</p>
-            </header>
+    <div
+      id="app"
+      v-cloak
+    >
+      <!-- Sticky App Header -->
+      <header
+        class="app-header"
+        :class="{ 'scrolled': isScrolled }"
+      >
+        <div class="header-content-single">
+          <h1 class="app-title">🚀 Performance Test Runner</h1>
 
-                        <main>
-                <!-- Tab Navigation -->
-                <nav class="tab-navigation">
-                    <button class="tab-button active" data-tab="execute">
-                        ⚡ Execute
-                    </button>
-                    <button class="tab-button disabled" data-tab="history" disabled title="Coming soon">
-                        📊 History
-                    </button>
-                    <button class="tab-button disabled" data-tab="insights" disabled title="Coming soon">
-                        🤖 AI Insights
-                    </button>
-                </nav>
+          <!-- Navigation Tabs -->
+          <nav class="app-navigation-inline">
+            <button
+              class="nav-tab"
+              :class="{ active: activeSection === 'run' }"
+              @click="scrollToSection('run')"
+            >
+              ⚡ Run
+            </button>
+            <button
+              class="nav-tab"
+              :class="{ active: activeSection === 'history' }"
+              @click="scrollToSection('history')"
+            >
+              📊 History
+            </button>
+            <button
+              class="nav-tab"
+              :class="{ active: activeSection === 'ai' }"
+              @click="scrollToSection('ai')"
+            >
+              🤖 AI Insights
+            </button>
+          </nav>
 
-                <!-- Two-Column Layout -->
-                <div class="two-column-layout">
-                    
-                    <!-- LEFT COLUMN: Configuration -->
-                    <div class="left-column">
-                        
-                        <!-- Quick Start Presets -->
-                        <section class="presets-section-compact" v-if="!configLoading && !configError">
-                            <h3 class="section-title">🚀 Quick Start</h3>
-                            
-                            <!-- Built-in Presets Carousel -->
-                            <div class="preset-carousel">
-                                <button
-                                    v-for="preset in builtInPresets"
-                                    :key="preset.id"
-                                    type="button"
-                                    class="preset-card"
-                                    :class="{ 'active': activePreset === preset.id }"
-                                    @click="loadPreset(preset)"
-                                    :title="preset.description"
-                                >
-                                    <span class="preset-icon-large">{{ preset.icon }}</span>
-                                    <span class="preset-name-compact">{{ preset.name }}</span>
-                                </button>
-                            </div>
-
-                            <!-- User Presets Dropdown -->
-                            <div class="user-presets-dropdown" v-if="userPresets.length > 0">
-                                <label for="user-preset-select">My Presets:</label>
-                                <div class="preset-select-group">
-                                    <select id="user-preset-select" @change="loadUserPreset($event)">
-                                        <option value="">-- Load saved preset --</option>
-                                        <option 
-                                            v-for="preset in userPresets" 
-                                            :key="preset.id"
-                                            :value="preset.id"
-                                        >
-                                            {{ preset.name }}
-                                        </option>
-                                    </select>
-                                    <button
-                                        v-if="selectedUserPresetId"
-                                        type="button"
-                                        class="btn-mini btn-delete"
-                                        @click="deletePreset(selectedUserPresetId)"
-                                        title="Delete selected preset"
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- Configuration Form -->
-                        <section class="config-section-compact">
-                            
-                            <!-- Loading State -->
-                            <div v-if="configLoading" class="loading-state">
-                                <p>⏳ Loading...</p>
-                            </div>
-
-                            <!-- Error State -->
-                            <div v-else-if="configError" class="error-state">
-                                <p>❌ Error loading config</p>
-                                <button class="btn btn-secondary" @click="loadConfiguration">
-                                    🔄 Retry
-                                </button>
-                            </div>
-
-                            <!-- Configuration Form -->
-                            <form @submit.prevent="handleSubmit" v-else>
-                                
-                                <h3 class="section-title">⚙️ Configuration</h3>
-
-                                <!-- Load Type -->
-                                <div class="form-group">
-                                    <label for="load-type">Load Type <span class="required">*</span></label>
-                                    <select id="load-type" v-model="selection.loadType" required>
-                                        <option value="">-- Select --</option>
-                                        <option v-for="(config, key) in testConfig.loadConfig" :key="key" :value="key">
-                                            {{ config.label }}
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <!-- Load Config Fields (Inline Groups) -->
-                                <div v-if="loadConfigFields.length > 0" class="field-group-inline">
-                                    
-                                    <!-- Number fields in rows of 3 -->
-                                    <template v-for="(field, index) in loadConfigFields" :key="field.name">
-                                        <div 
-                                            v-if="field.type === 'number'"
-                                            class="form-group-mini"
-                                            :class="{ 'break': (index) % 3 === 0 && index !== 0 }"
-                                        >
-                                            <label :for="'load-' + field.name">
-                                                {{ field.label }}
-                                                <span v-if="field.unit" class="field-unit-mini">{{ field.unit }}</span>
-                                            </label>
-                                            <input 
-                                                :id="'load-' + field.name"
-                                                type="number"
-                                                v-model.number="loadData[field.name]"
-                                                :min="field.min"
-                                                required
-                                            >
-                                        </div>
-
-                                        <!-- Checkboxes inline -->
-                                        <div 
-                                            v-else-if="field.type === 'boolean'"
-                                            class="form-group-checkbox-inline"
-                                        >
-                                            <label>
-                                                <input 
-                                                    type="checkbox"
-                                                    v-model="loadData[field.name]"
-                                                >
-                                                <span>{{ field.label }}</span>
-                                            </label>
-                                        </div>
-
-                                        <!-- Text fields full width -->
-                                        <div 
-                                            v-else
-                                            class="form-group"
-                                        >
-                                            <label :for="'load-' + field.name">{{ field.label }}</label>
-                                            <input 
-                                                :id="'load-' + field.name"
-                                                type="text"
-                                                v-model="loadData[field.name]"
-                                            >
-                                        </div>
-                                    </template>
-
-                                    <!-- Validation Errors -->
-                                    <div v-if="validationErrors.load.length > 0" class="validation-errors">
-                                        <p v-for="(error, index) in validationErrors.load" :key="index">
-                                            ⚠️ {{ error }}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Environment & URL (Side by side) -->
-                                <div class="form-row-split">
-                                    <div class="form-group">
-                                        <label for="environment">Environment <span class="required">*</span></label>
-                                        <select id="environment" v-model="selection.environment" required>
-                                            <option value="">-- Select --</option>
-                                            <option v-for="(config, key) in testConfig.environment" :key="key" :value="key">
-                                                {{ config.label }}
-                                            </option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group" v-if="availableUrls.length > 0">
-                                        <label for="target-url">URL <span class="required">*</span></label>
-                                        <select id="target-url" v-model="selection.targetUrl" required>
-                                            <option value="">-- Select --</option>
-                                            <option v-for="url in availableUrls" :key="url" :value="url">
-                                                {{ url }}
-                                            </option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Scenario -->
-                                <div class="form-group">
-                                    <label for="scenario">Scenario <span class="required">*</span></label>
-                                    <select id="scenario" v-model="selection.scenario" required>
-                                        <option value="">-- Select --</option>
-                                        <option v-for="(config, key) in testConfig.scenarioConfig" :key="key" :value="key">
-                                            {{ config.label }}
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <!-- Scenario Fields -->
-                                <div v-if="scenarioConfigFields.length > 0" class="scenario-fields-inline">
-                                    <template v-for="field in scenarioConfigFields" :key="field.name">
-                                        <!-- Checkboxes inline -->
-                                        <div v-if="field.type === 'boolean'" class="form-group-checkbox-inline">
-                                            <label>
-                                                <input type="checkbox" v-model="scenarioData[field.name]">
-                                                <span>{{ field.label }}</span>
-                                            </label>
-                                        </div>
-
-                                        <!-- Numbers -->
-                                        <div v-else-if="field.type === 'number'" class="form-group-mini">
-                                            <label :for="'scenario-' + field.name">{{ field.label }}</label>
-                                            <input 
-                                                :id="'scenario-' + field.name"
-                                                type="number"
-                                                v-model.number="scenarioData[field.name]"
-                                            >
-                                        </div>
-
-                                        <!-- Text -->
-                                        <div v-else class="form-group">
-                                            <label :for="'scenario-' + field.name">{{ field.label }}</label>
-                                            <input 
-                                                :id="'scenario-' + field.name"
-                                                type="text"
-                                                v-model="scenarioData[field.name]"
-                                            >
-                                        </div>
-                                    </template>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="action-buttons">
-                                    <button 
-                                        type="submit" 
-                                        class="btn btn-primary btn-block"
-                                        :disabled="isSubmitting || !isFormValid || hasValidationErrors"
-                                    >
-                                        <span v-if="!isSubmitting">▶️ Run Test</span>
-                                        <span v-else>⏳ Running...</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="btn btn-secondary btn-block"
-                                        @click="openSavePresetModal"
-                                        :disabled="!isFormValid"
-                                    >
-                                        💾 Save Preset
-                                    </button>
-                                </div>
-
-                            </form>
-
-                        </section>
-
-                    </div><!-- End left-column -->
-
-                    <!-- RIGHT COLUMN: Output & Status -->
-                    <div class="right-column">
-                        
-                        <!-- Configuration Output -->
-                        <section class="output-section-compact">
-                            <div class="output-header-compact">
-                                <h3 class="section-title">📄 Configuration</h3>
-                                
-                                <!-- Format Toggle -->
-                                <div class="format-toggle">
-                                    <label class="format-option" :class="{ active: outputFormat === 'json' }">
-                                        <input type="radio" value="json" v-model="outputFormat">
-                                        <span>JSON</span>
-                                    </label>
-                                    <label class="format-option" :class="{ active: outputFormat === 'env' }">
-                                        <input type="radio" value="env" v-model="outputFormat">
-                                        <span>ENV</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="output-container-compact">
-                                <pre class="output-content">{{ formattedOutput }}</pre>
-                                <button 
-                                    type="button" 
-                                    class="btn-icon-compact" 
-                                    @click="copyOutput"
-                                    :title="'Copy ' + outputFormat.toUpperCase()"
-                                >
-                                    {{ copyButtonText }}
-                                </button>
-                            </div>
-
-                            <div class="output-tip" v-if="outputFormat === 'env'">
-                                <small>💡 Use: <code>source config.env</code></small>
-                            </div>
-                        </section>
-
-                        <!-- Status Section -->
-                        <section class="status-section-compact" v-if="status.visible">
-                            <div class="status-content-compact" :class="'status-' + status.type">
-                                <span v-html="status.message"></span>
-                            </div>
-                        </section>
-
-                        <!-- Quick Tips -->
-                        <section class="tips-section">
-                            <h4>💡 Tips</h4>
-                            <ul>
-                                <li><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Run test</li>
-                                <li><kbd>Ctrl</kbd>+<kbd>S</kbd> Save preset</li>
-                                <li>Click preset for quick load</li>
-                            </ul>
-                        </section>
-
-                    </div><!-- End right-column -->
-
-                </div><!-- End two-column-layout -->
-
-            </main>
-
-            <footer>
-                <p>
-                    Powered by GitHub Actions |
-                    <a :href="'https://github.com/' + config.REPO_OWNER + '/perf-runner-ui'" target="_blank"
-                        rel="noopener">
-                        View Source
-                    </a>
-                </p>
-            </footer>
+          <div class="header-actions">
+            <button
+              class="btn-icon-header"
+              title="Settings"
+              @click="openSettingsModal"
+            >
+              ⚙️
+            </button>
+            <button
+              class="btn-icon-header"
+              title="Help"
+              @click="openHelpModal"
+            >
+              ❓
+            </button>
+          </div>
         </div>
 
-        <!-- Token Modal -->
-        <div class="modal" v-if="modal.visible" @click.self="closeModal">
-            <div class="modal-content">
-                <h3>⚠️ GitHub Token Required</h3>
-                <p>To trigger GitHub Actions, you need to provide a Personal Access Token.</p>
+        <!-- Scroll Progress -->
+        <div
+          class="scroll-progress"
+          :style="{ width: scrollProgress + '%' }"
+        ></div>
+      </header>
 
-                <div class="form-group">
-                    <label for="github-token">GitHub Personal Access Token</label>
-                    <input type="password" id="github-token" v-model="modal.tokenInput" @keyup.enter="saveToken"
-                        placeholder="ghp_xxxxxxxxxxxx">
-                    <small>
-                        <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Perf%20Test%20Runner"
-                            target="_blank" rel="noopener">
-                            Generate token
-                        </a> with <code>repo</code> and <code>workflow</code> scopes
-                    </small>
-                </div>
+      <!-- Main App Content -->
+      <main class="app-main">
+        <!-- ============================================
+                 RUN SECTION
+                 ============================================ -->
+        <section
+          id="run-section"
+          class="app-section section-run"
+        >
+          <div class="section-content">
+            <!-- Quick Start Presets -->
+            <div
+              class="presets-section-compact"
+              v-if="!configLoading && !configError"
+            >
+              <h3 class="section-title">🚀 Quick Start</h3>
 
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" @click="closeModal">
-                        Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" @click="saveToken">
-                        Save Token
-                    </button>
+              <!-- Presets Carousel (Built-in + User) -->
+              <div class="preset-carousel">
+                <!-- Built-in Presets -->
+                <button
+                  v-for="preset in builtInPresets"
+                  :key="preset.id"
+                  type="button"
+                  class="preset-card"
+                  :class="{ 'active': activePreset === preset.id }"
+                  @click="loadPreset(preset)"
+                  :title="preset.description"
+                >
+                  <span class="preset-icon-large">{{ preset.icon }}</span>
+                  <span class="preset-name-compact">{{ preset.name }}</span>
+                </button>
+
+                <!-- Divider -->
+                <div
+                  v-if="userPresets.length > 0"
+                  class="preset-divider"
+                ></div>
+
+                <!-- User Presets -->
+                <div
+                  v-for="preset in userPresets"
+                  :key="preset.id"
+                  class="preset-card preset-card-user"
+                  :class="{ 'active': activePreset === preset.id }"
+                  @click="loadPreset(preset)"
+                  :title="preset.description || preset.name"
+                  role="button"
+                  tabindex="0"
+                  @keyup.enter="loadPreset(preset)"
+                >
+                  <span class="preset-icon-large">{{ preset.icon || '💾' }}</span>
+                  <span class="preset-name-compact">{{ preset.name }}</span>
+                  <button
+                    type="button"
+                    class="preset-delete-btn"
+                    @click.stop="deletePreset(preset.id)"
+                    title="Delete preset"
+                  >
+                    ×
+                  </button>
                 </div>
+              </div>
             </div>
-        </div>
-                <!-- Save Preset Modal -->
-        <div class="modal" v-if="savePresetModal.visible" @click.self="closeSavePresetModal">
-            <div class="modal-content">
-                <h3>💾 Save Configuration as Preset</h3>
-                <p>Save your current configuration for quick access later.</p>
-                
-                <div class="form-group">
-                    <label for="preset-name">Preset Name</label>
-                    <input 
-                        type="text" 
-                        id="preset-name"
-                        v-model="savePresetModal.name"
-                        @keyup.enter="savePreset"
-                        placeholder="My Custom Test Config"
-                        maxlength="50"
-                    >
-                    <small>{{ savePresetModal.name.length }}/50 characters</small>
-                </div>
 
-                <div class="form-group">
-                    <label for="preset-description">Description (optional)</label>
-                    <input 
-                        type="text" 
-                        id="preset-description"
-                        v-model="savePresetModal.description"
-                        placeholder="What is this preset for?"
-                        maxlength="100"
-                    >
-                    <small>{{ savePresetModal.description.length }}/100 characters</small>
-                </div>
+            <!-- Two-Column Layout -->
+            <div class="two-column-layout">
+              <!-- LEFT COLUMN: Configuration -->
+              <div class="left-column">
+                <!-- Configuration Form -->
+                <div class="config-card">
+                  <!-- Loading State -->
+                  <div
+                    v-if="configLoading"
+                    class="loading-state"
+                  >
+                    <p>⏳ Loading configuration...</p>
+                  </div>
 
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" @click="closeSavePresetModal">
-                        Cancel
+                  <!-- Error State -->
+                  <div
+                    v-else-if="configError"
+                    class="error-state"
+                  >
+                    <p>❌ Failed to load configuration</p>
+                    <p class="error-message">{{ configError }}</p>
+                    <button
+                      class="btn btn-secondary"
+                      @click="loadConfiguration"
+                    >
+                      🔄 Retry
                     </button>
-                    <button 
-                        type="button" 
-                        class="btn btn-primary" 
-                        @click="savePreset"
-                        :disabled="!savePresetModal.name.trim()"
-                    >
+                  </div>
+
+                  <!-- Configuration Form -->
+                  <form
+                    @submit.prevent="handleSubmit"
+                    v-else
+                  >
+                    <!-- Load Configuration Section -->
+                    <div class="form-section-highlight">
+                      <h4 class="section-label">Load Configuration</h4>
+
+                      <!-- Load Type -->
+                      <div class="form-group">
+                        <label for="load-type">Load Type <span class="required">*</span></label>
+                        <select
+                          id="load-type"
+                          v-model="selection.loadType"
+                          required
+                        >
+                          <option value="">-- Select --</option>
+                          <option
+                            v-for="(config, key) in testConfig.loadConfig"
+                            :key="key"
+                            :value="key"
+                          >
+                            {{ config.label }}
+                          </option>
+                        </select>
+                      </div>
+
+                      <!-- Load Config Fields (Inline Groups) -->
+                      <div
+                        v-if="loadConfigFields.length > 0"
+                        class="field-group-inline"
+                      >
+                        <template
+                          v-for="(field, index) in loadConfigFields"
+                          :key="field.name"
+                        >
+                          <!-- Number fields in rows of 3 -->
+                          <div
+                            v-if="field.type === 'number'"
+                            class="form-group-mini"
+                          >
+                            <label
+                              :for="'load-' + field.name"
+                              :class="{ 'has-tooltip': field.help }"
+                              :data-tooltip="field.help"
+                              :aria-label="field.help ? field.label + '. ' + field.help : field.label"
+                            >
+                              {{ field.label }}
+                              <span
+                                v-if="field.unit"
+                                class="field-unit-mini"
+                                >{{ field.unit }}</span
+                              >
+                            </label>
+                            <input
+                              :id="'load-' + field.name"
+                              type="number"
+                              v-model.number="loadData[field.name]"
+                              :min="field.min"
+                              required
+                            />
+                          </div>
+
+                          <!-- Checkboxes inline -->
+                          <div
+                            v-else-if="field.type === 'boolean'"
+                            class="form-group-checkbox-inline"
+                          >
+                            <label
+                              :class="{ 'has-tooltip': field.help }"
+                              :data-tooltip="field.help"
+                              :aria-label="field.help ? field.label + '. ' + field.help : field.label"
+                            >
+                              <input
+                                type="checkbox"
+                                v-model="loadData[field.name]"
+                              />
+                              <span>{{ field.label }}</span>
+                            </label>
+                          </div>
+
+                          <!-- Text fields full width -->
+                          <div
+                            v-else
+                            class="form-group"
+                          >
+                            <label
+                              :for="'load-' + field.name"
+                              :class="{ 'has-tooltip': field.help }"
+                              :data-tooltip="field.help"
+                              :aria-label="field.help ? field.label + '. ' + field.help : field.label"
+                            >
+                              {{ field.label }}
+                            </label>
+                            <input
+                              :id="'load-' + field.name"
+                              type="text"
+                              v-model="loadData[field.name]"
+                            />
+                          </div>
+                        </template>
+
+                        <!-- Validation Errors -->
+                        <div
+                          v-if="validationErrors.load.length > 0"
+                          class="validation-errors"
+                        >
+                          <p
+                            v-for="(error, index) in validationErrors.load"
+                            :key="index"
+                          >
+                            ⚠️ {{ error }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- End Load Configuration Section -->
+
+                    <!-- Environment Section -->
+                    <div class="form-section-highlight">
+                      <h4 class="section-label">Environment</h4>
+
+                      <!-- Environment & URL (Side by side) -->
+                      <div class="form-row-split">
+                        <div class="form-group">
+                          <label for="environment"
+                            >Environment <span class="required">*</span></label
+                          >
+                          <select
+                            id="environment"
+                            v-model="selection.environment"
+                            required
+                          >
+                            <option value="">-- Select --</option>
+                            <option
+                              v-for="(config, key) in testConfig.environment"
+                              :key="key"
+                              :value="key"
+                            >
+                              {{ config.label }}
+                            </option>
+                          </select>
+                        </div>
+
+                        <div
+                          class="form-group"
+                          v-if="availableUrls.length > 0"
+                        >
+                          <label for="target-url">URL <span class="required">*</span></label>
+                          <select
+                            id="target-url"
+                            v-model="selection.targetUrl"
+                            required
+                          >
+                            <option value="">-- Select --</option>
+                            <option
+                              v-for="url in availableUrls"
+                              :key="url"
+                              :value="url"
+                            >
+                              {{ url }}
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- End Environment Section -->
+
+                    <!-- Scenario Section -->
+                    <div class="form-section-highlight">
+                      <h4 class="section-label">Scenario</h4>
+
+                      <!-- Scenario -->
+                      <div class="form-group">
+                        <label for="scenario">Scenario <span class="required">*</span></label>
+                        <select
+                          id="scenario"
+                          v-model="selection.scenario"
+                          required
+                        >
+                          <option value="">-- Select --</option>
+                          <option
+                            v-for="(config, key) in testConfig.scenarioConfig"
+                            :key="key"
+                            :value="key"
+                          >
+                            {{ config.label }}
+                          </option>
+                        </select>
+                      </div>
+
+                      <!-- Scenario Fields -->
+                      <div
+                        v-if="scenarioConfigFields.length > 0"
+                        class="scenario-fields-inline"
+                      >
+                        <template
+                          v-for="field in scenarioConfigFields"
+                          :key="field.name"
+                        >
+                          <!-- Checkboxes inline -->
+                          <div
+                            v-if="field.type === 'boolean'"
+                            class="form-group-checkbox-inline"
+                          >
+                            <label
+                              :class="{ 'has-tooltip': field.help }"
+                              :data-tooltip="field.help"
+                              :aria-label="field.help ? field.label + '. ' + field.help : field.label"
+                            >
+                              <input
+                                type="checkbox"
+                                v-model="scenarioData[field.name]"
+                              />
+                              <span>{{ field.label }}</span>
+                            </label>
+                          </div>
+
+                          <!-- Numbers -->
+                          <div
+                            v-else-if="field.type === 'number'"
+                            class="form-group-mini"
+                          >
+                            <label
+                              :for="'scenario-' + field.name"
+                              :class="{ 'has-tooltip': field.help }"
+                              :data-tooltip="field.help"
+                              :aria-label="field.help ? field.label + '. ' + field.help : field.label"
+                            >
+                              {{ field.label }}
+                              <span
+                                v-if="field.unit"
+                                class="field-unit-mini"
+                                >{{ field.unit }}</span
+                              >
+                            </label>
+                            <input
+                              :id="'scenario-' + field.name"
+                              type="number"
+                              v-model.number="scenarioData[field.name]"
+                            />
+                          </div>
+
+                          <!-- Text -->
+                          <div
+                            v-else
+                            class="form-group"
+                          >
+                            <label
+                              :for="'scenario-' + field.name"
+                              :class="{ 'has-tooltip': field.help }"
+                              :data-tooltip="field.help"
+                              :aria-label="field.help ? field.label + '. ' + field.help : field.label"
+                            >
+                              {{ field.label }}
+                            </label>
+                            <input
+                              :id="'scenario-' + field.name"
+                              type="text"
+                              v-model="scenarioData[field.name]"
+                            />
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                    <!-- End Scenario Section -->
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                      <button
+                        type="submit"
+                        class="btn btn-primary btn-block"
+                        :disabled="isSubmitting || !isFormValid || hasValidationErrors"
+                      >
+                        <span v-if="!isSubmitting">▶️ Run Test</span>
+                        <span v-else>⏳ Running...</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-block"
+                        @click="openSavePresetModal"
+                        :disabled="!isFormValid"
+                      >
                         💾 Save Preset
-                    </button>
+                      </button>
+                    </div>
+                  </form>
                 </div>
+              </div>
+              <!-- End left-column -->
+
+              <!-- RIGHT COLUMN: Output & Status -->
+              <div class="right-column">
+                <!-- Configuration Output -->
+                <div class="output-card">
+                  <div class="output-header-compact">
+                    <!-- Format Toggle -->
+                    <div class="format-toggle">
+                      <label
+                        class="format-option"
+                        :class="{ active: outputFormat === 'json' }"
+                      >
+                        <input
+                          type="radio"
+                          value="json"
+                          v-model="outputFormat"
+                        />
+                        <span>JSON</span>
+                      </label>
+                      <label
+                        class="format-option"
+                        :class="{ active: outputFormat === 'env' }"
+                      >
+                        <input
+                          type="radio"
+                          value="env"
+                          v-model="outputFormat"
+                        />
+                        <span>ENV</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="output-container-compact">
+                    <pre class="output-content">{{ formattedOutput }}</pre>
+                    <button
+                      type="button"
+                      class="btn-icon-compact"
+                      @click="copyOutput"
+                      :title="'Copy ' + outputFormat.toUpperCase()"
+                    >
+                      {{ copyButtonText }}
+                    </button>
+                  </div>
+
+                  <div
+                    class="output-tip"
+                    v-if="outputFormat === 'env'"
+                  >
+                    <small>💡 Use: <code>source config.env</code></small>
+                  </div>
+                </div>
+
+                <!-- Status Section -->
+                <div
+                  class="status-card"
+                  v-if="status.visible"
+                >
+                  <div
+                    class="status-content-compact"
+                    :class="'status-' + status.type"
+                  >
+                    <span v-html="status.message"></span>
+                  </div>
+                </div>
+
+                <!-- Quick Tips -->
+                <div class="tips-card">
+                  <h4>💡 Tips</h4>
+                  <ul>
+                    <li><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Run test</li>
+                    <li><kbd>Ctrl</kbd>+<kbd>S</kbd> Save preset</li>
+                    <li>Click preset for quick load</li>
+                  </ul>
+                </div>
+              </div>
+              <!-- End right-column -->
             </div>
+            <!-- End two-column-layout -->
+          </div>
+          <!-- End section-content -->
+        </section>
+
+        <!-- ============================================
+                 HISTORY SECTION (Placeholder)
+                 ============================================ -->
+        <section
+          id="history-section"
+          class="app-section section-history"
+        >
+          <div class="section-content">
+            <div class="placeholder-content">
+              <div class="placeholder-icon">📊</div>
+              <h2 class="placeholder-title">Coming Soon</h2>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================
+                 AI INSIGHTS SECTION (Placeholder)
+                 ============================================ -->
+        <section
+          id="ai-section"
+          class="app-section section-ai"
+        >
+          <div class="section-content">
+            <div class="placeholder-content">
+              <div class="placeholder-icon">🤖</div>
+              <h2 class="placeholder-title">Coming Soon</h2>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Token Modal -->
+      <div
+        class="modal"
+        v-if="modal.visible"
+        @click.self="closeModal"
+      >
+        <div class="modal-content">
+          <h3>⚠️ GitHub Token Required</h3>
+          <p>To trigger GitHub Actions, you need to provide a Personal Access Token.</p>
+
+          <div class="form-group">
+            <label for="github-token">GitHub Personal Access Token</label>
+            <input
+              type="password"
+              id="github-token"
+              v-model="modal.tokenInput"
+              @keyup.enter="saveToken"
+              placeholder="ghp_xxxxxxxxxxxx"
+            />
+            <small>
+              <a
+                href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Perf%20Test%20Runner"
+                target="_blank"
+                rel="noopener"
+              >
+                Generate token
+              </a>
+              with <code>repo</code> and <code>workflow</code> scopes
+            </small>
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              @click="closeModal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="saveToken"
+            >
+              Save Token
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- Save Preset Modal -->
+      <div
+        class="modal"
+        v-if="savePresetModal.visible"
+        @click.self="closeSavePresetModal"
+      >
+        <div class="modal-content">
+          <h3>💾 Save Configuration as Preset</h3>
+          <p>Save your current configuration for quick access later.</p>
+
+          <div class="form-group">
+            <label for="preset-name">Preset Name <span class="required">*</span></label>
+            <input
+              type="text"
+              id="preset-name"
+              v-model="savePresetModal.name"
+              @keyup.enter="savePreset"
+              placeholder="My Custom Test Config"
+              maxlength="50"
+              required
+            />
+            <small>{{ savePresetModal.name.length }}/50 characters</small>
+          </div>
+
+          <div class="form-group">
+            <label for="preset-icon">Icon (emoji) <span class="required">*</span></label>
+            <input
+              type="text"
+              id="preset-icon"
+              v-model="savePresetModal.icon"
+              placeholder="e.g., 🚀 or 🎯"
+              maxlength="4"
+              style="font-size: 1.5em; text-align: center"
+              required
+            />
+            <small>Choose an emoji to represent this preset</small>
+          </div>
+
+          <div class="form-group">
+            <label for="preset-description">Description (optional)</label>
+            <input
+              type="text"
+              id="preset-description"
+              v-model="savePresetModal.description"
+              placeholder="What is this preset for?"
+              maxlength="100"
+            />
+            <small>{{ savePresetModal.description.length }}/100 characters</small>
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              @click="closeSavePresetModal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="savePreset"
+              :disabled="!savePresetModal.name.trim() || !savePresetModal.icon.trim()"
+            >
+              💾 Save Preset
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Load Vue.js 3 from CDN -->
@@ -425,6 +705,5 @@
 
     <!-- Vue Application -->
     <script src="js/app.js"></script>
-</body>
-
+  </body>
 </html>
