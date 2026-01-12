@@ -1,9 +1,244 @@
 /**
  * Performance Test Runner - Vue.js Application
- * Step 7: Dynamic form field generation with validation
+ * Version: 0.8.0 - Security Hardened Edition
+ * 
+ * Critical Fixes:
+ * - XSS prevention with HTML sanitization
+ * - Input validation and sanitization
+ * - Race condition prevention
+ * - Memory leak fixes
+ * - Proper error boundaries
+ * - localStorage quota handling
  */
 
 const { createApp } = Vue;
+
+// ============================================
+// Security Utilities
+// ============================================
+
+/**
+ * HTML Sanitizer - Prevents XSS attacks
+ */
+const SecurityUtils = {
+    /**
+     * Escape HTML entities to prevent XSS
+     */
+    escapeHtml(text) {
+        if (typeof text !== 'string') return text;
+        
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;',
+            '/': '&#x2F;'
+        };
+        
+        return text.replace(/[&<>"'/]/g, m => map[m]);
+    },
+
+    /**
+     * Sanitize user input - removes dangerous characters
+     */
+    sanitizeInput(input, maxLength = 1000) {
+        if (typeof input !== 'string') return String(input);
+        
+        // Remove control characters except newlines
+        let sanitized = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        
+        // Limit length
+        sanitized = sanitized.substring(0, maxLength);
+        
+        return sanitized.trim();
+    },
+
+    /**
+     * Validate URL format
+     */
+    isValidUrl(url) {
+        try {
+            const parsed = new URL(url);
+            return ['http:', 'https:'].includes(parsed.protocol);
+        } catch {
+            return false;
+        }
+    },
+
+    /**
+     * Validate emoji/icon (single emoji only)
+     */
+    sanitizeEmoji(input) {
+        if (typeof input !== 'string') return '🚀';
+        
+        // Get first character (handles multi-byte emojis)
+        const firstEmoji = Array.from(input.trim())[0];
+        
+        // If empty or just whitespace, return default
+        if (!firstEmoji) return '🚀';
+        
+        // Check if it's likely an emoji (basic check)
+        // Emojis are typically in Unicode ranges: 0x1F000-0x1FFFF
+        const codePoint = firstEmoji.codePointAt(0);
+        if (codePoint >= 0x1F000 && codePoint <= 0x1FFFF) {
+            return firstEmoji;
+        }
+        
+        // Allow common emoji ranges
+        if (codePoint >= 0x2600 && codePoint <= 0x26FF) {
+            return firstEmoji;
+        }
+        
+        // Default fallback
+        return '🚀';
+    },
+
+    /**
+     * Validate GitHub token format
+     */
+    isValidGitHubToken(token) {
+        if (typeof token !== 'string') return false;
+        
+        // Classic tokens start with ghp_
+        // Fine-grained tokens start with github_pat_
+        return (
+            (token.startsWith('ghp_') && token.length >= 40) ||
+            (token.startsWith('github_pat_') && token.length >= 82)
+        );
+    },
+
+    /**
+     * Create safe HTML structure without v-html
+     * Returns object that can be rendered safely
+     */
+    createSafeStatusMessage(type, content) {
+        // Create structured content that Vue can render safely
+        return {
+            type,
+            lines: content.lines || [],
+            list: content.list || [],
+            link: content.link ? {
+                text: this.escapeHtml(content.link.text),
+                url: this.isValidUrl(content.link.url) ? content.link.url : '#'
+            } : null
+        };
+    }
+};
+
+// ============================================
+// Storage Utilities with Error Handling
+// ============================================
+
+const StorageUtils = {
+    /**
+     * Safely get item from localStorage
+     */
+    getItem(key, defaultValue = null) {
+        try {
+            const item = localStorage.getItem(key);
+            return item !== null ? item : defaultValue;
+        } catch (error) {
+            console.error(`Failed to get ${key} from localStorage:`, error);
+            return defaultValue;
+        }
+    },
+
+    /**
+     * Safely set item to localStorage with quota handling
+     */
+    setItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (error) {
+            if (error.name === 'QuotaExceededError') {
+                console.error('localStorage quota exceeded');
+                
+                // Try to free up space by removing old items
+                try {
+                    // Remove oldest presets if quota exceeded
+                    const presets = this.getJSON('perf_runner_presets', []);
+                    if (presets.length > 5) {
+                        // Keep only 5 most recent
+                        const trimmed = presets.slice(-5);
+                        localStorage.setItem('perf_runner_presets', JSON.stringify(trimmed));
+                        
+                        // Try again
+                        localStorage.setItem(key, value);
+                        return true;
+                    }
+                } catch (retryError) {
+                    console.error('Failed to free up space:', retryError);
+                }
+                
+                throw new Error('Storage quota exceeded. Please delete some presets.');
+            }
+            
+            console.error(`Failed to set ${key} in localStorage:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Safely get JSON from localStorage
+     */
+    getJSON(key, defaultValue = null) {
+        try {
+            const item = this.getItem(key);
+            return item ? JSON.parse(item) : defaultValue;
+        } catch (error) {
+            console.error(`Failed to parse JSON from ${key}:`, error);
+            return defaultValue;
+        }
+    },
+
+    /**
+     * Safely set JSON to localStorage
+     */
+    setJSON(key, value) {
+        try {
+            const json = JSON.stringify(value);
+            return this.setItem(key, json);
+        } catch (error) {
+            console.error(`Failed to stringify JSON for ${key}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Remove item from localStorage
+     */
+    removeItem(key) {
+        try {
+            localStorage.removeItem(key);
+            return true;
+        } catch (error) {
+            console.error(`Failed to remove ${key} from localStorage:`, error);
+            return false;
+        }
+    }
+};
+
+// ============================================
+// Debounce Utility
+// ============================================
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// ============================================
+// Vue Application
+// ============================================
 
 createApp({
     // ============================================
@@ -68,11 +303,14 @@ createApp({
             isScrolled: false,
             scrollProgress: 0,
 
-            // Status display
+            // Status display - CHANGED to safe structure
             status: {
                 visible: false,
                 type: 'info',
-                message: ''
+                title: '',
+                lines: [],
+                list: [],
+                link: null
             },
 
             // Modal state
@@ -82,7 +320,18 @@ createApp({
             },
 
             // Token status
-            hasToken: false
+            hasToken: false,
+
+            // Loading states to prevent race conditions
+            loadTypeChanging: false,
+            scenarioChanging: false,
+
+            // Abort controller for fetch requests
+            abortController: null,
+
+            // Debounced validation function (will be created in created hook)
+            debouncedValidateLoadConfig: null
+
         };
     },
 
@@ -90,67 +339,44 @@ createApp({
     // Computed Properties
     // ============================================
     computed: {
-        /**
-         * Get selected load configuration
-         */
         selectedLoadConfig() {
             if (!this.selection.loadType || !this.testConfig) return null;
             return this.testConfig.loadConfig[this.selection.loadType];
         },
 
-        /**
-         * Get selected environment configuration
-         */
         selectedEnvironment() {
             if (!this.selection.environment || !this.testConfig) return null;
             return this.testConfig.environment[this.selection.environment];
         },
 
-        /**
-         * Get selected scenario configuration
-         */
         selectedScenario() {
             if (!this.selection.scenario || !this.testConfig) return null;
             return this.testConfig.scenarioConfig[this.selection.scenario];
         },
 
-        /**
-         * Get scenario fields
-         */
         selectedScenarioFields() {
             if (!this.selectedScenario) return null;
             return this.selectedScenario.fields;
         },
 
-        /**
-         * Get available URLs based on selected environment
-         */
         availableUrls() {
             if (!this.selectedEnvironment) return [];
             return this.selectedEnvironment.urls || [];
         },
 
-        /**
-         * Check if form is valid
-         */
         isFormValid() {
             return this.selection.loadType &&
                 this.selection.environment &&
                 this.selection.targetUrl &&
-                this.selection.scenario;
+                this.selection.scenario &&
+                !this.hasValidationErrors;
         },
 
-        /**
-         * Check if there are validation errors
-         */
         hasValidationErrors() {
             return this.validationErrors.load.length > 0 ||
                 this.validationErrors.scenario.length > 0;
         },
 
-        /**
-        * Get current configuration as object
-        */
         currentConfig() {
             return {
                 loadType: this.selection.loadType,
@@ -163,9 +389,6 @@ createApp({
             };
         },
 
-        /**
-     * Generate formatted output based on selected format
-     */
         formattedOutput() {
             if (!this.isFormValid) {
                 return 'Select all required options to generate configuration...';
@@ -176,99 +399,77 @@ createApp({
             } else {
                 return this.generateJsonFormat();
             }
-        },
-
-        /**
-         * Legacy: Keep for backward compatibility
-         */
-        formattedConfig() {
-            return this.formattedOutput;
         }
-
     },
 
     // ============================================
     // Watchers - React to Data Changes
     // ============================================
     watch: {
-        /**
-         * Watch load type changes
-         */
         'selection.loadType'(newType) {
-            if (!newType || !this.testConfig) return;
+            if (!newType || !this.testConfig || this.loadTypeChanging) return;
+            
+            this.loadTypeChanging = true;
+            
+            try {
+                console.log('Load type changed to:', newType);
 
-            console.log('Load type changed to:', newType);
+                if (this.manualConfigExpanded) {
+                    this.activePreset = null;
+                }
 
-            // Clear active preset when manually changing
-            if (this.manualConfigExpanded) {
-                this.activePreset = null;
+                const config = this.testConfig.loadConfig[newType];
+                const { label, description, ...fieldValues } = config;
+
+                this.loadData = { ...fieldValues };
+                this.loadConfigFields = this.generateFields(
+                    fieldValues,
+                    this.testConfig.fieldMetadata
+                );
+
+                this.validateLoadConfig();
+            } finally {
+                // Use nextTick to prevent race conditions
+                this.$nextTick(() => {
+                    this.loadTypeChanging = false;
+                });
             }
-
-            const config = this.testConfig.loadConfig[newType];
-
-            // Extract field values (exclude label, description)
-            const { label, description, ...fieldValues } = config;
-
-            // Clone values to loadData
-            this.loadData = { ...fieldValues };
-
-            // Generate field definitions
-            this.loadConfigFields = this.generateFields(
-                fieldValues,
-                this.testConfig.fieldMetadata
-            );
-
-            console.log('Generated fields:', this.loadConfigFields);
-            console.log('Load data:', this.loadData);
-
-            // Validate
-            this.validateLoadConfig();
         },
 
-        /**
-         * Watch environment changes
-         */
         'selection.environment'(newEnv) {
             console.log('Environment changed to:', newEnv);
-
-            // Reset URL when environment changes
             this.selection.targetUrl = '';
 
-            // Auto-select first URL if only one available
             if (this.availableUrls.length === 1) {
                 this.selection.targetUrl = this.availableUrls[0];
             }
         },
 
-        /**
-         * Watch scenario changes
-         */
         'selection.scenario'(newScenario) {
-            if (!newScenario || !this.testConfig) return;
+            if (!newScenario || !this.testConfig || this.scenarioChanging) return;
+            
+            this.scenarioChanging = true;
+            
+            try {
+                console.log('Scenario changed to:', newScenario);
 
-            console.log('Scenario changed to:', newScenario);
-
-            const fields = this.testConfig.scenarioConfig[newScenario].fields;
-
-            // Clone values to scenarioData
-            this.scenarioData = { ...fields };
-
-            // Generate field definitions
-            this.scenarioConfigFields = this.generateFields(
-                fields,
-                this.testConfig.fieldMetadata
-            );
-
-            console.log('Scenario fields:', this.scenarioConfigFields);
-            console.log('Scenario data:', this.scenarioData);
+                const fields = this.testConfig.scenarioConfig[newScenario].fields;
+                this.scenarioData = { ...fields };
+                this.scenarioConfigFields = this.generateFields(
+                    fields,
+                    this.testConfig.fieldMetadata
+                );
+            } finally {
+                this.$nextTick(() => {
+                    this.scenarioChanging = false;
+                });
+            }
         },
 
-        /**
-         * Watch loadData changes for validation
-         */
         loadData: {
-            handler() {
-                this.validateLoadConfig();
+            handler(newVal, oldVal) {
+                // Call debounced validation
+                this.debouncedValidateLoadConfig();
             },
             deep: true
         }
@@ -277,27 +478,62 @@ createApp({
     // ============================================
     // Lifecycle Hooks
     // ============================================
-    async mounted() {
-        console.log('🚀 Performance Test Runner (SPA) initialized');
-        console.log('📝 Configuration:', this.config);
 
-        // Load test configuration
+    created() {
+        // Create debounced validation function with correct context
+        this.debouncedValidateLoadConfig = debounce(() => {
+            this.validateLoadConfig();
+        }, 300);
+    },
+    
+    async mounted() {
+        console.log('🚀 Performance Test Runner v0.8.0 - Security Hardened');
+
+        // Initialize
         await this.loadConfiguration();
 
-        // Initialize presets after config is loaded
         if (this.testConfig) {
             this.initializePresets();
         }
 
-        // Check for existing token
         this.checkToken();
 
-        // Add scroll listener
+        // Add event listeners
+        this.handleScroll = this.handleScroll.bind(this);
+        this.handleKeyboard = this.handleKeyboard.bind(this);
+        
         window.addEventListener('scroll', this.handleScroll);
-        this.handleScroll(); // Initial check
+        document.addEventListener('keydown', this.handleKeyboard);
+        
+        this.handleScroll();
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
+        // Make available for debugging
+        window.vueApp = this;
+        
+        console.log('✅ Application initialized');
+    },
+
+    beforeUnmount() {
+        // Cleanup event listeners
+        window.removeEventListener('scroll', this.handleScroll);
+        document.removeEventListener('keydown', this.handleKeyboard);
+        
+        // Abort any pending requests
+        if (this.abortController) {
+            this.abortController.abort();
+        }
+        
+        console.log('🧹 Cleanup completed');
+    },
+
+    // ============================================
+    // Methods
+    // ============================================
+    methods: {
+        /**
+         * Handle keyboard shortcuts
+         */
+        handleKeyboard(e) {
             // Ctrl+Enter: Submit form
             if (e.ctrlKey && e.key === 'Enter') {
                 e.preventDefault();
@@ -313,27 +549,21 @@ createApp({
                     this.openSavePresetModal();
                 }
             }
-        });
 
-        // Make available in console for debugging
-        window.vueApp = this;
-    },
-
-    /**
-     * Cleanup on unmount
-     */
-    beforeUnmount() {
-        window.removeEventListener('scroll', this.handleScroll);
-    },
-
-    // ============================================
-    // Methods
-    // ============================================
-    methods: {
+            // Escape: Close modals
+            if (e.key === 'Escape') {
+                if (this.modal.visible) {
+                    this.closeModal();
+                }
+                if (this.savePresetModal.visible) {
+                    this.closeSavePresetModal();
+                }
+            }
+        },
 
         /**
-        * Scroll to section
-        */
+         * Scroll to section
+         */
         scrollToSection(sectionName) {
             const sectionId = `${sectionName}-section`;
             const element = document.getElementById(sectionId);
@@ -350,14 +580,12 @@ createApp({
          * Handle scroll events
          */
         handleScroll() {
-            // Update scrolled state
             this.isScrolled = window.scrollY > 20;
 
-            // Update scroll progress
             const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
-            this.scrollProgress = (window.scrollY / windowHeight) * 100;
+            this.scrollProgress = windowHeight > 0 ? (window.scrollY / windowHeight) * 100 : 0;
 
-            // Update active section (scroll spy)
+            // Update active section
             const sections = ['run', 'history', 'ai'];
             const headerOffset = 150;
 
@@ -377,14 +605,18 @@ createApp({
          * Open settings modal (placeholder)
          */
         openSettingsModal() {
-            alert('Settings coming soon!');
+            this.showSafeStatus('info', {
+                lines: ['Settings feature coming soon!']
+            });
         },
 
         /**
          * Open help modal (placeholder)
          */
         openHelpModal() {
-            alert('Help coming soon!');
+            this.showSafeStatus('info', {
+                lines: ['Help feature coming soon!', 'For now, hover over field labels for tooltips.']
+            });
         },
 
         /**
@@ -394,10 +626,20 @@ createApp({
             this.configLoading = true;
             this.configError = null;
 
+            // Cancel previous request if any
+            if (this.abortController) {
+                this.abortController.abort();
+            }
+
+            this.abortController = new AbortController();
+
             try {
                 console.log('📥 Loading configuration from config.json...');
 
-                const response = await fetch('config.json');
+                const response = await fetch('config.json', {
+                    signal: this.abortController.signal,
+                    cache: 'no-cache'
+                });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -414,18 +656,23 @@ createApp({
                 console.log('✅ Configuration loaded successfully');
 
             } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.log('⚠️ Configuration load aborted');
+                    return;
+                }
+                
                 console.error('❌ Failed to load configuration:', error);
                 this.configError = error.message;
             } finally {
                 this.configLoading = false;
+                this.abortController = null;
             }
         },
 
         /**
-        * Initialize built-in presets
+         * Initialize built-in presets
          */
         initializePresets() {
-            // Built-in presets
             this.builtInPresets = [
                 {
                     id: 'smoke-sandbox',
@@ -481,13 +728,9 @@ createApp({
                 }
             ];
 
-            // Load user presets from localStorage
             this.loadUserPresets();
 
-            console.log('✅ Presets initialized:', {
-                builtIn: this.builtInPresets.length,
-                user: this.userPresets.length
-            });
+            console.log('✅ Presets initialized');
         },
 
         /**
@@ -495,11 +738,19 @@ createApp({
          */
         loadUserPresets() {
             try {
-                const stored = localStorage.getItem('perf_runner_presets');
-                if (stored) {
-                    this.userPresets = JSON.parse(stored);
-                    console.log('📂 Loaded user presets:', this.userPresets.length);
-                }
+                const presets = StorageUtils.getJSON('perf_runner_presets', []);
+                
+                // Validate and sanitize each preset
+                this.userPresets = presets
+                    .filter(p => p && p.id && p.name)
+                    .map(p => ({
+                        ...p,
+                        name: SecurityUtils.sanitizeInput(p.name, 50),
+                        description: SecurityUtils.sanitizeInput(p.description || '', 100),
+                        icon: SecurityUtils.sanitizeEmoji(p.icon)
+                    }));
+                
+                console.log('📂 Loaded user presets:', this.userPresets.length);
             } catch (error) {
                 console.error('Failed to load user presets:', error);
                 this.userPresets = [];
@@ -511,10 +762,18 @@ createApp({
          */
         saveUserPresets() {
             try {
-                localStorage.setItem('perf_runner_presets', JSON.stringify(this.userPresets));
+                StorageUtils.setJSON('perf_runner_presets', this.userPresets);
                 console.log('💾 Saved user presets');
+                return true;
             } catch (error) {
                 console.error('Failed to save user presets:', error);
+                this.showSafeStatus('error', {
+                    lines: [
+                        'Failed to save preset',
+                        error.message
+                    ]
+                });
+                return false;
             }
         },
 
@@ -526,24 +785,20 @@ createApp({
 
             const config = preset.config;
 
-            // Load selections
             if (config.selections) {
                 this.selection.loadType = config.selections.loadType || '';
                 this.selection.environment = config.selections.environment || '';
                 this.selection.scenario = config.selections.scenario || '';
 
-                // Wait for URL list to populate, then select
                 this.$nextTick(() => {
                     if (config.selections.targetUrl) {
                         this.selection.targetUrl = config.selections.targetUrl;
                     } else if (this.availableUrls.length > 0) {
-                        // Auto-select first URL
                         this.selection.targetUrl = this.availableUrls[0];
                     }
                 });
             }
 
-            // Load field overrides (if any)
             if (config.loadData) {
                 this.$nextTick(() => {
                     Object.assign(this.loadData, config.loadData);
@@ -556,32 +811,12 @@ createApp({
                 });
             }
 
-            // Set active preset
             this.activePreset = preset.id;
-
-            // Collapse manual config
             this.manualConfigExpanded = false;
 
-            // Show success message
-            this.showStatus(`✅ Loaded preset: ${preset.name}`, 'success');
-
-            console.log('✅ Preset loaded successfully');
-        },
-
-        /**
-         * Get preset name by ID
-         */
-        getPresetName(presetId) {
-            const preset = [...this.builtInPresets, ...this.userPresets]
-                .find(p => p.id === presetId);
-            return preset ? preset.name : '';
-        },
-
-        /**
-         * Toggle manual configuration visibility
-         */
-        toggleManualConfig() {
-            this.manualConfigExpanded = !this.manualConfigExpanded;
+            this.showSafeStatus('success', {
+                lines: [`Loaded preset: ${SecurityUtils.escapeHtml(preset.name)}`]
+            });
         },
 
         /**
@@ -609,7 +844,10 @@ createApp({
          * Save current configuration as preset
          */
         savePreset() {
-            const name = this.savePresetModal.name.trim();
+            // Sanitize inputs
+            const name = SecurityUtils.sanitizeInput(this.savePresetModal.name, 50);
+            const description = SecurityUtils.sanitizeInput(this.savePresetModal.description, 100);
+            const icon = SecurityUtils.sanitizeEmoji(this.savePresetModal.icon);
 
             if (!name) {
                 alert('Please enter a preset name');
@@ -621,16 +859,20 @@ createApp({
                 if (!confirm(`A preset named "${name}" already exists. Overwrite it?`)) {
                     return;
                 }
-                // Remove existing
                 this.userPresets = this.userPresets.filter(p => p.name !== name);
             }
 
-            // Create preset
+            // Check preset limit
+            if (this.userPresets.length >= 20) {
+                alert('Maximum 20 user presets allowed. Please delete some presets first.');
+                return;
+            }
+
             const preset = {
                 id: 'user-' + Date.now(),
-                name: name,
-                description: this.savePresetModal.description.trim(),
-                icon: this.savePresetModal.icon.trim() || '💾',
+                name,
+                description,
+                icon,
                 created: new Date().toISOString(),
                 config: {
                     selections: {
@@ -644,22 +886,20 @@ createApp({
                 }
             };
 
-            // Add to user presets
             this.userPresets.push(preset);
 
-            // Save to localStorage
-            this.saveUserPresets();
+            if (!this.saveUserPresets()) {
+                // Rollback if save failed
+                this.userPresets = this.userPresets.filter(p => p.id !== preset.id);
+                return;
+            }
 
-            // Close modal
             this.closeSavePresetModal();
-
-            // Set as active
             this.activePreset = preset.id;
 
-            // Show success
-            this.showStatus(`✅ Preset "${name}" saved successfully!`, 'success');
-
-            console.log('💾 Preset saved:', preset);
+            this.showSafeStatus('success', {
+                lines: [`Preset "${SecurityUtils.escapeHtml(name)}" saved successfully!`]
+            });
         },
 
         /**
@@ -674,21 +914,16 @@ createApp({
                 return;
             }
 
-            // Remove from list
             this.userPresets = this.userPresets.filter(p => p.id !== presetId);
-
-            // Save to localStorage
             this.saveUserPresets();
 
-            // Clear active if this was active
             if (this.activePreset === presetId) {
                 this.activePreset = null;
             }
 
-            // Show feedback
-            this.showStatus(`🗑️ Preset "${preset.name}" deleted`, 'info');
-
-            console.log('🗑️ Preset deleted:', preset.name);
+            this.showSafeStatus('info', {
+                lines: [`Preset "${SecurityUtils.escapeHtml(preset.name)}" deleted`]
+            });
         },
 
         /**
@@ -698,9 +933,8 @@ createApp({
             return Object.entries(configObject).map(([key, value]) => {
                 const metadata = metadataSource[key] || {};
 
-                // Log warning if metadata is missing
                 if (!metadataSource[key]) {
-                    console.warn(`⚠️ Missing metadata for field: "${key}". Using auto-generated label.`);
+                    console.warn(`⚠️ Missing metadata for field: "${key}"`);
                 }
 
                 return {
@@ -730,16 +964,13 @@ createApp({
             const config = this.currentConfig;
             const lines = [];
 
-            // Header
             lines.push('# Performance Test Configuration');
             lines.push(`# Generated: ${config.timestamp}`);
             lines.push('');
 
-            // Load Type
             lines.push('# Load Configuration');
             lines.push(`LOAD_TYPE=${config.loadType}`);
 
-            // Load Config Fields
             Object.entries(config.loadConfig).forEach(([key, value]) => {
                 const envKey = this.toEnvKey('LOAD', key);
                 const envValue = this.toEnvValue(value);
@@ -747,17 +978,14 @@ createApp({
             });
             lines.push('');
 
-            // Environment
             lines.push('# Environment');
             lines.push(`ENVIRONMENT=${config.environment}`);
             lines.push(`TARGET_URL=${this.escapeEnvValue(config.target_url)}`);
             lines.push('');
 
-            // Scenario
             lines.push('# Scenario');
             lines.push(`SCENARIO=${this.escapeEnvValue(config.scenario)}`);
 
-            // Scenario Fields
             if (Object.keys(config.scenarioFields).length > 0) {
                 Object.entries(config.scenarioFields).forEach(([key, value]) => {
                     const envKey = this.toEnvKey('SCENARIO', key);
@@ -767,47 +995,28 @@ createApp({
                 lines.push('');
             }
 
-            // Metadata
             lines.push('# Metadata');
             lines.push(`TIMESTAMP=${config.timestamp}`);
 
             return lines.join('\n');
         },
 
-        /**
-         * Convert field name to ENV variable name
-         */
         toEnvKey(prefix, fieldName) {
-            // Convert camelCase or snake_case to UPPER_SNAKE_CASE
             const envName = fieldName
-                .replace(/([A-Z])/g, '_$1')  // camelCase to snake_case
+                .replace(/([A-Z])/g, '_$1')
                 .toUpperCase()
-                .replace(/^_/, '');  // Remove leading underscore
-
+                .replace(/^_/, '');
             return `${prefix}_${envName}`;
         },
 
-        /**
-         * Convert value to ENV format
-         */
         toEnvValue(value) {
-            if (typeof value === 'boolean') {
-                return value.toString();
-            }
-            if (typeof value === 'number') {
-                return value.toString();
-            }
-            if (typeof value === 'string') {
-                return this.escapeEnvValue(value);
-            }
+            if (typeof value === 'boolean') return value.toString();
+            if (typeof value === 'number') return value.toString();
+            if (typeof value === 'string') return this.escapeEnvValue(value);
             return String(value);
         },
 
-        /**
-         * Escape ENV value if needed
-         */
         escapeEnvValue(value) {
-            // If value contains spaces or special chars, quote it
             if (/[\s$"'`\\]/.test(value)) {
                 return `"${value.replace(/"/g, '\\"')}"`;
             }
@@ -829,66 +1038,40 @@ createApp({
                 console.log(`✅ ${this.outputFormat.toUpperCase()} copied to clipboard`);
             } catch (err) {
                 console.error('Copy failed:', err);
-                this.showStatus('Failed to copy to clipboard', 'error');
+                this.showSafeStatus('error', {
+                    lines: ['Failed to copy to clipboard']
+                });
             }
         },
 
-        /**
-         * Detect field type from value
-         * Priority: 1) metadata.type override, 2) auto-detect from value
-         */
         detectFieldType(value, metadata) {
-            // Allow metadata to override for edge cases (select, textarea, url, etc.)
-            if (metadata.type) {
-                const type = metadata.type.toLowerCase();
-                console.log(`Using metadata type override: ${type} for value:`, value);
-                return type;
-            }
+            if (metadata.type) return metadata.type.toLowerCase();
 
-            // Auto-detect from value type
             const valueType = typeof value;
 
-            if (valueType === 'boolean') {
-                return 'boolean';
-            }
+            if (valueType === 'boolean') return 'boolean';
+            if (valueType === 'number') return 'number';
+            if (valueType === 'string') return 'text';
 
-            if (valueType === 'number') {
-                return 'number';
-            }
-
-            if (valueType === 'string') {
-                // Future: could detect special formats here
-                // if (value.startsWith('http')) return 'url';
-                // if (value.includes('@')) return 'email';
-                return 'text';
-            }
-
-            // Future: handle arrays, objects, etc.
             if (Array.isArray(value)) {
                 console.warn('Array type detected, defaulting to text:', value);
                 return 'text';
             }
 
-            // Fallback
             console.warn('Unknown type, defaulting to text:', valueType, value);
             return 'text';
         },
 
-        /**
-         * Format field name to readable label
-         */
         formatLabel(fieldName) {
             return fieldName
-                .replace(/([A-Z])/g, ' $1') // Add space before capitals
-                .replace(/_/g, ' ')          // Replace underscores with spaces
-                .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/_/g, ' ')
+                .replace(/^./, str => str.toUpperCase())
                 .trim();
         },
 
-        /**
-         * Get minimum value for validation
-         */
         getMinValue(fieldName, metadata) {
+            if (metadata.min !== undefined) return metadata.min;
             if (fieldName === 'users') return 1;
             if (fieldName.includes('duration') || fieldName.includes('Duration')) return 0;
             if (fieldName.includes('ramp') || fieldName.includes('Ramp')) return 0;
@@ -901,24 +1084,20 @@ createApp({
         validateLoadConfig() {
             const errors = [];
 
-            // Validate users >= 1
             if (this.loadData.users !== undefined && this.loadData.users < 1) {
                 errors.push('Users must be at least 1');
             }
 
-            // Validate duration >= 0
             if (this.loadData.duration !== undefined && this.loadData.duration < 0) {
                 errors.push('Duration cannot be negative');
             }
 
-            // Validate duration >= rampUp
             if (this.loadData.duration !== undefined &&
                 this.loadData.rampUp !== undefined &&
                 this.loadData.duration < this.loadData.rampUp) {
                 errors.push('Duration must be greater than or equal to Ramp-Up time');
             }
 
-            // Validate minPause <= maxPause
             if (this.loadData.minPause !== undefined &&
                 this.loadData.maxPause !== undefined &&
                 this.loadData.minPause > this.loadData.maxPause) {
@@ -926,10 +1105,6 @@ createApp({
             }
 
             this.validationErrors.load = errors;
-
-            if (errors.length > 0) {
-                console.log('⚠️ Validation errors:', errors);
-            }
         },
 
         /**
@@ -939,22 +1114,17 @@ createApp({
             console.log('📊 Form submitted');
 
             if (!this.isFormValid) {
-                this.showStatus('Please select all required options', 'error');
+                this.showSafeStatus('error', {
+                    lines: ['Please select all required options and fix validation errors']
+                });
                 return;
             }
 
-            if (this.hasValidationErrors) {
-                this.showStatus('Please fix validation errors before submitting', 'error');
-                return;
-            }
-
-            // Check if token exists
             if (!this.hasToken) {
                 this.openModal();
                 return;
             }
 
-            // Trigger test
             this.triggerTest();
         },
 
@@ -962,25 +1132,28 @@ createApp({
          * Trigger GitHub Actions workflow
          */
         async triggerTest() {
-            this.showStatus('⏳ Triggering GitHub Actions workflow...', 'info');
+            this.showSafeStatus('info', {
+                lines: ['Triggering GitHub Actions workflow...']
+            });
+            
             this.isSubmitting = true;
 
             const config = this.currentConfig;
-            console.log('📊 Test configuration:', config);
 
             try {
-                const token = localStorage.getItem(this.config.TOKEN_STORAGE_KEY);
+                const token = StorageUtils.getItem(this.config.TOKEN_STORAGE_KEY);
 
                 if (!token) {
                     throw new Error('GitHub token not found');
                 }
 
-                // Construct API URL
+                // Validate token format
+                if (!SecurityUtils.isValidGitHubToken(token)) {
+                    throw new Error('Invalid GitHub token format');
+                }
+
                 const apiUrl = `${this.config.API_BASE}/repos/${this.config.REPO_OWNER}/${this.config.REPO_NAME}/actions/workflows/${this.config.WORKFLOW_FILE}/dispatches`;
 
-                console.log('🔗 API URL:', apiUrl);
-
-                // Prepare payload
                 const payload = {
                     ref: this.config.BRANCH,
                     inputs: {
@@ -988,9 +1161,6 @@ createApp({
                     }
                 };
 
-                console.log('📤 Sending payload:', payload);
-
-                // Make API request
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -1001,9 +1171,6 @@ createApp({
                     body: JSON.stringify(payload)
                 });
 
-                console.log('📥 Response status:', response.status);
-
-                // Handle response
                 if (response.status === 204) {
                     this.handleSuccess(config);
                 } else if (response.status === 404) {
@@ -1032,31 +1199,26 @@ createApp({
             const repoUrl = `https://github.com/${this.config.REPO_OWNER}/${this.config.REPO_NAME}`;
             const actionsUrl = `${repoUrl}/actions/workflows/${this.config.WORKFLOW_FILE}`;
 
-            const message = `
-                <div>
-                    <p><strong>✅ Performance test triggered successfully!</strong></p>
-                    <br>
-                    <p><strong>📊 Configuration:</strong></p>
-                    <ul>
-                        <li>Load Type: <code>${config.loadType}</code></li>
-                        <li>Users: ${config.loadConfig.users}</li>
-                        <li>Duration: ${config.loadConfig.duration}s</li>
-                        <li>Environment: <code>${config.environment}</code></li>
-                        <li>Target: <code>${this.escapeHtml(config.target_url)}</code></li>
-                        <li>Scenario: <code>${config.scenario}</code></li>
-                    </ul>
-                    <br>
-                    <p>⏱️ The workflow is now running...</p>
-                    <br>
-                    <p>
-                        <a href="${actionsUrl}" target="_blank" rel="noopener" class="status-link">
-                            🔗 View Workflow Progress →
-                        </a>
-                    </p>
-                </div>
-            `;
+            this.showSafeStatus('success', {
+                lines: [
+                    'Performance test triggered successfully!',
+                    '',
+                    'Configuration:'
+                ],
+                list: [
+                    `Load Type: ${config.loadType}`,
+                    `Users: ${config.loadConfig.users}`,
+                    `Duration: ${config.loadConfig.duration}s`,
+                    `Environment: ${config.environment}`,
+                    `Target: ${config.target_url}`,
+                    `Scenario: ${config.scenario}`
+                ],
+                link: {
+                    text: 'View Workflow Progress',
+                    url: actionsUrl
+                }
+            });
 
-            this.showStatus(message, 'success');
             console.log('✅ Workflow triggered successfully');
         },
 
@@ -1064,45 +1226,40 @@ createApp({
          * Handle errors
          */
         handleError(error) {
-            let errorMessage = '<p><strong>❌ Failed to trigger workflow</strong></p><br>';
+            const lines = ['Failed to trigger workflow', ''];
+            const list = [];
 
             if (error.message.includes('token')) {
-                errorMessage += `
-                    <p>🔑 <strong>Token Issue:</strong></p>
-                    <p>${error.message}</p>
-                    <br>
-                    <p>💡 <strong>Try:</strong></p>
-                    <ul>
-                        <li>Clear your token and set a new one</li>
-                        <li>Ensure token has "repo" and "workflow" scopes</li>
-                    </ul>
-                `;
+                lines.push('Token Issue:');
+                lines.push(error.message);
+                lines.push('');
+                lines.push('Try:');
+                list.push('Clear your token and set a new one');
+                list.push('Ensure token has "repo" and "workflow" scopes');
             } else if (error.message.includes('not found')) {
-                errorMessage += `
-                    <p>📁 <strong>Repository/Workflow Issue:</strong></p>
-                    <p>${error.message}</p>
-                    <br>
-                    <p>💡 <strong>Check:</strong></p>
-                    <ul>
-                        <li>Repository: ${this.config.REPO_OWNER}/${this.config.REPO_NAME}</li>
-                        <li>Workflow file: .github/workflows/${this.config.WORKFLOW_FILE}</li>
-                        <li>Repository is accessible with your token</li>
-                    </ul>
-                `;
+                lines.push('Repository/Workflow Issue:');
+                lines.push(error.message);
+                lines.push('');
+                lines.push('Check:');
+                list.push(`Repository: ${this.config.REPO_OWNER}/${this.config.REPO_NAME}`);
+                list.push(`Workflow file: .github/workflows/${this.config.WORKFLOW_FILE}`);
             } else {
-                errorMessage += `<p>${error.message}</p>`;
+                lines.push(error.message);
             }
 
-            this.showStatus(errorMessage, 'error');
+            this.showSafeStatus('error', { lines, list });
         },
 
         /**
-         * Show status message
+         * Show status message - SAFE VERSION
          */
-        showStatus(message, type = 'info') {
+        showSafeStatus(type, content) {
             this.status.visible = true;
             this.status.type = type;
-            this.status.message = message;
+            this.status.title = content.title || '';
+            this.status.lines = content.lines || [];
+            this.status.list = content.list || [];
+            this.status.link = content.link || null;
 
             this.$nextTick(() => {
                 const statusEl = document.querySelector('.status-card');
@@ -1123,13 +1280,13 @@ createApp({
          * Check if token exists
          */
         checkToken() {
-            const token = localStorage.getItem(this.config.TOKEN_STORAGE_KEY);
-            this.hasToken = !!token;
+            const token = StorageUtils.getItem(this.config.TOKEN_STORAGE_KEY);
+            this.hasToken = !!token && SecurityUtils.isValidGitHubToken(token);
 
             if (this.hasToken) {
-                console.log('✅ GitHub token found');
+                console.log('✅ Valid GitHub token found');
             } else {
-                console.log('⚠️  No GitHub token found');
+                console.log('⚠️ No valid GitHub token found');
             }
         },
 
@@ -1162,32 +1319,22 @@ createApp({
                 return;
             }
 
-            if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
-                const confirmed = confirm('Token format looks unusual. Are you sure this is correct?');
+            if (!SecurityUtils.isValidGitHubToken(token)) {
+                const confirmed = confirm('Token format looks unusual. Are you sure this is a valid GitHub token?');
                 if (!confirmed) return;
             }
 
-            localStorage.setItem(this.config.TOKEN_STORAGE_KEY, token);
-            this.hasToken = true;
-
-            this.closeModal();
-            this.showStatus('✅ Token saved successfully! You can now trigger tests.', 'success');
-
-            console.log('✅ Token saved');
-        },
-
-        /**
-         * Escape HTML to prevent XSS
-         */
-        escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
+            try {
+                StorageUtils.setItem(this.config.TOKEN_STORAGE_KEY, token);
+                this.hasToken = true;
+                this.closeModal();
+                
+                this.showSafeStatus('success', {
+                    lines: ['Token saved successfully! You can now trigger tests.']
+                });
+            } catch (error) {
+                alert(`Failed to save token: ${error.message}`);
+            }
         }
     }
 }).mount('#app');
@@ -1196,4 +1343,5 @@ createApp({
 // Console Utilities
 // ============================================
 console.log('💡 Vue app available via: window.vueApp');
-console.log('💡 Try: vueApp.loadData, vueApp.scenarioData, vueApp.validateLoadConfig()');
+console.log('💡 Security utilities: SecurityUtils');
+console.log('💡 Storage utilities: StorageUtils');
