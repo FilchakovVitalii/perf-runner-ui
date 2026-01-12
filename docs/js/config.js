@@ -1,8 +1,8 @@
 const CONFIG = {
     // Your repository details
     REPO_OWNER: 'FilchakovVitalii',
-    REPO_NAME: 'perf-runner',
-    WORKFLOW_FILE: 'basic.yml',
+    REPO_NAME: 'se-ecommerce-demo-gatling-tests',
+    WORKFLOW_FILE: 'perfoemance-test.yml',
     BRANCH: 'main',
     // GitHub API
     API_BASE: 'https://api.github.com',
