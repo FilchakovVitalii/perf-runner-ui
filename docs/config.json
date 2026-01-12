@@ -42,21 +42,24 @@
             "label": "Sandbox",
             "urls": [
                 "https://example-sandbox.com",
-                "https://domain-sandbox.com"
+                "https://domain-sandbox.com",
+                "https://ecomm.gatling.io"
             ]
         },
         "stage": {
             "label": "Stage",
             "urls": [
                 "https://example-stage.com",
-                "https://domain-stage.com"
+                "https://domain-stage.com",
+                "https://ecomm.gatling.io"
             ]
         },
         "production": {
             "label": "Production",
             "urls": [
                 "https://example-prod.com",
-                "https://domain.com"
+                "https://domain.com",
+                "https://ecomm.gatling.io"
             ],
             "warning": "⚠️ You are targeting PRODUCTION environment!"
         }
@@ -83,6 +86,11 @@
             "label": "Scenario No Additional Fields",
             "description": "Simple scenario without extra configuration",
             "fields": {}
+        },
+        "example.BasicSimulation":{
+            "label": "SE-COMMERCE-BASIC",
+            "description": "se-commerce-gatling-basic-simulation",
+             "fields": {}
         }
     },
     "fieldMetadata": {
