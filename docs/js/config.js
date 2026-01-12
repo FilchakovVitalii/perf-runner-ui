@@ -2,7 +2,7 @@ const CONFIG = {
     // Your repository details
     REPO_OWNER: 'FilchakovVitalii',
     REPO_NAME: 'se-ecommerce-demo-gatling-tests',
-    WORKFLOW_FILE: 'perfoemance-test.yml',
+    WORKFLOW_FILE: 'performance-test.yml',
     BRANCH: 'test-demo',
     // GitHub API
     API_BASE: 'https://api.github.com',
