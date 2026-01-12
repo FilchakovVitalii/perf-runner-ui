@@ -3,7 +3,7 @@ const CONFIG = {
     REPO_OWNER: 'FilchakovVitalii',
     REPO_NAME: 'se-ecommerce-demo-gatling-tests',
     WORKFLOW_FILE: 'perfoemance-test.yml',
-    BRANCH: 'main',
+    BRANCH: 'test-demo',
     // GitHub API
     API_BASE: 'https://api.github.com',
     // Storage
