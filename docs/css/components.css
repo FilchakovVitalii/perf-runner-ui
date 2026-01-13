@@ -1,0 +1,136 @@
+/* ============================================
+   COMPONENT STYLES
+   Buttons, Cards, Icons, Tips
+   ============================================ */
+
+/* Header Icon Buttons */
+.btn-icon-header {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    font-size: 1.2em;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background var(--transition-speed);
+}
+
+.btn-icon-header:hover {
+    background: var(--gray-100);
+}
+
+/* Cards */
+.config-card,
+.output-card,
+.status-card,
+.tips-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.section-title {
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0 0 12px 0;
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    font-size: 0.95em;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: white;
+    color: var(--gray-700);
+    border: 2px solid var(--gray-300);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Tips Card */
+.tips-card h4 {
+    margin: 0 0 12px 0;
+    font-size: 1em;
+    color: var(--gray-700);
+}
+
+.tips-card ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tips-card li {
+    font-size: 0.9em;
+    color: var(--gray-600);
+    padding: 6px 0;
+}
+
+.tips-card kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 0.8em;
+    font-family: monospace;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading & Error States */
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.loading-state p {
+    font-size: 1.1em;
+    color: var(--gray-600);
+}
+
+.error-state p {
+    font-size: 1.1em;
+    color: var(--error);
+}
+
+.error-message {
+    font-size: 0.9em !important;
+    color: var(--gray-600) !important;
+    margin: 12px 0 !important;
+}
