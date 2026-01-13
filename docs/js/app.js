@@ -952,75 +952,18 @@ createApp({
         /**
          * Generate JSON format output
          */
+                /**
+         * Generate JSON format output
+         */
         generateJsonFormat() {
-            const config = this.currentConfig;
-            return JSON.stringify(config, null, 2);
+            return FormatUtils.toJSON(this.currentConfig);
         },
 
         /**
          * Generate ENV format output
          */
         generateEnvFormat() {
-            const config = this.currentConfig;
-            const lines = [];
-
-            lines.push('# Performance Test Configuration');
-            lines.push(`# Generated: ${config.timestamp}`);
-            lines.push('');
-
-            lines.push('# Load Configuration');
-            lines.push(`LOAD_TYPE=${config.loadType}`);
-
-            Object.entries(config.loadConfig).forEach(([key, value]) => {
-                const envKey = this.toEnvKey('LOAD', key);
-                const envValue = this.toEnvValue(value);
-                lines.push(`${envKey}=${envValue}`);
-            });
-            lines.push('');
-
-            lines.push('# Environment');
-            lines.push(`ENVIRONMENT=${config.environment}`);
-            lines.push(`TARGET_URL=${this.escapeEnvValue(config.target_url)}`);
-            lines.push('');
-
-            lines.push('# Scenario');
-            lines.push(`SCENARIO=${this.escapeEnvValue(config.scenario)}`);
-
-            if (Object.keys(config.scenarioFields).length > 0) {
-                Object.entries(config.scenarioFields).forEach(([key, value]) => {
-                    const envKey = this.toEnvKey('SCENARIO', key);
-                    const envValue = this.toEnvValue(value);
-                    lines.push(`${envKey}=${envValue}`);
-                });
-                lines.push('');
-            }
-
-            lines.push('# Metadata');
-            lines.push(`TIMESTAMP=${config.timestamp}`);
-
-            return lines.join('\n');
-        },
-
-        toEnvKey(prefix, fieldName) {
-            const envName = fieldName
-                .replace(/([A-Z])/g, '_$1')
-                .toUpperCase()
-                .replace(/^_/, '');
-            return `${prefix}_${envName}`;
-        },
-
-        toEnvValue(value) {
-            if (typeof value === 'boolean') return value.toString();
-            if (typeof value === 'number') return value.toString();
-            if (typeof value === 'string') return this.escapeEnvValue(value);
-            return String(value);
-        },
-
-        escapeEnvValue(value) {
-            if (/[\s$"'`\\]/.test(value)) {
-                return `"${value.replace(/"/g, '\\"')}"`;
-            }
-            return value;
+            return FormatUtils.toENV(this.currentConfig);
         },
 
         /**
