@@ -1059,100 +1059,26 @@ createApp({
             
             this.isSubmitting = true;
 
-            const config = this.currentConfig;
-
             try {
                 const token = StorageUtils.getItem(this.config.TOKEN_STORAGE_KEY);
+                
+                // Use GitHubAPI module
+                const result = await GitHubAPI.triggerWorkflow(
+                    this.currentConfig,
+                    token,
+                    this.config.API_CONFIG,
+                    this.outputFormat
+                );
 
-                if (!token) {
-                    throw new Error('GitHub token not found');
-                }
-
-                // Validate token format
-                if (!SecurityUtils.isValidGitHubToken(token)) {
-                    throw new Error('Invalid GitHub token format');
-                }
-
-                const apiUrl = `${this.config.API_BASE}/repos/${this.config.REPO_OWNER}/${this.config.REPO_NAME}/actions/workflows/${this.config.WORKFLOW_FILE}/dispatches`;
-                // Determine which format to send
-                const formatToSend = this.config.API_CONFIG.USE_SELECTED_FORMAT
-                    ? this.outputFormat
-                    : this.config.DEFAULT_OUTPUT_FORMAT;
-
-                // Prepare configuration data
-                let configData;
-                let configFormat;
-
-                if (this.config.API_CONFIG.SEND_BOTH_FORMATS) {
-                    // Send both JSON and ENV formats
-                    configData = {
-                        json: JSON.stringify(config, null, 2),
-                        env: this.generateEnvFormat(),
-                        format: formatToSend  // Preferred format
-                    };
-                    configFormat = 'both';
+                if (result.success) {
+                    this.handleSuccess(result);
                 } else {
-                    // Send only selected format
-                    if (formatToSend === 'env') {
-                        configData = this.generateEnvFormat();
-                        configFormat = 'env';
-                    } else {
-                        configData = JSON.stringify(config, null, 2);
-                        configFormat = 'json';
-                    }
-                }
-
-                // Prepare payload
-                const payload = {
-                    ref: this.config.BRANCH,
-                    inputs: {}
-                };
-
-                // Add format indicator if configured
-                if (this.config.API_CONFIG.INCLUDE_FORMAT_INDICATOR) {
-                    payload.inputs.format = configFormat;
-                }
-
-                // Add configuration data
-                if (this.config.API_CONFIG.SEND_BOTH_FORMATS) {
-                    // Send as structured object
-                    payload.inputs.config_json = configData.json;
-                    payload.inputs.config_env = configData.env;
-                    payload.inputs.preferred_format = configData.format;
-                } else {
-                    // Send as single string
-                    payload.inputs.config = configData;
-                }
-
-                console.log('📤 Sending payload with format:', configFormat);
-                console.log('📤 Payload:', payload);
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Authorization': `token ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.status === 204) {
-                    this.handleSuccess(config);
-                } else if (response.status === 404) {
-                    throw new Error('Workflow not found. Check repository and workflow file name.');
-                } else if (response.status === 401) {
-                    throw new Error('Authentication failed. Please check your GitHub token.');
-                } else if (response.status === 403) {
-                    throw new Error('Permission denied. Token may lack required scopes (repo, workflow).');
-                } else {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.message || `API request failed with status ${response.status}`);
+                    this.handleError(result);
                 }
 
             } catch (error) {
-                console.error('❌ Error:', error);
-                this.handleError(error);
+                console.error('❌ Unexpected error:', error);
+                this.handleError({ message: error.message });
             } finally {
                 this.isSubmitting = false;
             }
@@ -1161,28 +1087,26 @@ createApp({
         /**
          * Handle successful workflow trigger
          */
-        handleSuccess(config) {
-            const repoUrl = `https://github.com/${this.config.REPO_OWNER}/${this.config.REPO_NAME}`;
-            const actionsUrl = `${repoUrl}/actions/workflows/${this.config.WORKFLOW_FILE}`;
+        handleSuccess(result) {
+            const lines = [
+                'Performance test triggered successfully!',
+                '',
+                'Configuration:'
+            ];
+
+            const list = [
+                `Load Type: ${result.data.loadType}`,
+                `Users: ${result.data.users}`,
+                `Duration: ${result.data.duration}s`,
+                `Environment: ${result.data.environment}`,
+                `Target: ${result.data.targetUrl}`,
+                `Scenario: ${result.data.scenario}`
+            ];
 
             this.showSafeStatus('success', {
-                lines: [
-                    'Performance test triggered successfully!',
-                    '',
-                    'Configuration:'
-                ],
-                list: [
-                    `Load Type: ${config.loadType}`,
-                    `Users: ${config.loadConfig.users}`,
-                    `Duration: ${config.loadConfig.duration}s`,
-                    `Environment: ${config.environment}`,
-                    `Target: ${config.target_url}`,
-                    `Scenario: ${config.scenario}`
-                ],
-                link: {
-                    text: 'View Workflow Progress',
-                    url: actionsUrl
-                }
+                lines,
+                list,
+                link: result.link
             });
 
             console.log('✅ Workflow triggered successfully');
@@ -1191,26 +1115,28 @@ createApp({
         /**
          * Handle errors
          */
-        handleError(error) {
+        handleError(result) {
             const lines = ['Failed to trigger workflow', ''];
             const list = [];
 
-            if (error.message.includes('token')) {
+            const errorMessage = result.message || 'Unknown error';
+
+            if (errorMessage.includes('token')) {
                 lines.push('Token Issue:');
-                lines.push(error.message);
+                lines.push(errorMessage);
                 lines.push('');
                 lines.push('Try:');
                 list.push('Clear your token and set a new one');
                 list.push('Ensure token has "repo" and "workflow" scopes');
-            } else if (error.message.includes('not found')) {
+            } else if (errorMessage.includes('not found')) {
                 lines.push('Repository/Workflow Issue:');
-                lines.push(error.message);
+                lines.push(errorMessage);
                 lines.push('');
                 lines.push('Check:');
                 list.push(`Repository: ${this.config.REPO_OWNER}/${this.config.REPO_NAME}`);
                 list.push(`Workflow file: .github/workflows/${this.config.WORKFLOW_FILE}`);
             } else {
-                lines.push(error.message);
+                lines.push(errorMessage);
             }
 
             this.showSafeStatus('error', { lines, list });
