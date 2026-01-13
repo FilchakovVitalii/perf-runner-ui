@@ -1,0 +1,103 @@
+/* ============================================
+   RESPONSIVE STYLES
+   Media Queries for Different Screen Sizes
+   ============================================ */
+
+@media (max-width: 1400px) {
+    :root {
+        --section-max-width: 1200px;
+        --content-padding: 40px;
+    }
+    
+    .two-column-layout {
+        grid-template-columns: 380px 1fr;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 1200px) {
+    :root {
+        --content-padding: 30px;
+    }
+    
+    .two-column-layout {
+        grid-template-columns: 460px 1fr;
+        gap: 24px;
+    }
+    
+    .right-column {
+        position: static;
+    }
+    
+    .form-group-mini {
+        flex: 0 0 calc(50% - 6px);
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --header-height: 60px;
+        --content-padding: 20px;
+    }
+    
+    .header-content-single {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 20px;
+    }
+    
+    .app-navigation-inline {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .app-title {
+        font-size: 1.1em;
+    }
+    
+    .header-top {
+        height: 50px;
+    }
+    
+    .nav-tab {
+        padding: 0 16px;
+        font-size: 0.9em;
+    }
+    
+    .section-content {
+        padding: 40px 20px;
+    }
+    
+    .preset-card {
+        min-width: 80px;
+        padding: 12px 8px;
+    }
+    
+    .form-row-split {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-group-mini {
+        flex: 0 0 100%;
+    }
+    
+    .placeholder-icon {
+        font-size: 4em;
+    }
+    
+    .placeholder-title {
+        font-size: 1.5em;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-content {
+        padding: 0 20px;
+    }
+    
+    .nav-tab {
+        padding: 0 12px;
+        font-size: 0.85em;
+    }
+}

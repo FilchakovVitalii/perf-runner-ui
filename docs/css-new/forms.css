@@ -1,0 +1,250 @@
+/* ============================================
+   FORM STYLES
+   Form Groups, Inputs, Validation, Tooltips
+   ============================================ */
+
+/* Form Section Highlights */
+.form-section-highlight {
+    background: linear-gradient(
+        135deg,
+        rgba(102, 126, 234, 0.03) 0%,
+        rgba(118, 75, 162, 0.03) 100%
+    );
+    border-left: 3px solid var(--primary);
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.section-label {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Form Styling */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+    font-size: 0.9em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="password"],
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.85em;
+    color: var(--gray-600);
+}
+
+.required {
+    color: var(--error);
+}
+
+/* ============================================
+   Tooltips (Modern Best Practice)
+   ============================================ */
+
+.has-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.has-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gray-900);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    font-weight: 400;
+    line-height: 1.4;
+    max-width: 260px;
+    width: max-content;
+    white-space: normal;
+    word-wrap: break-word;
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.3s ease 0.3s;
+}
+
+.has-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--gray-900);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1001;
+    transition: opacity 0.3s ease 0.3s;
+}
+
+.has-tooltip:hover::before,
+.has-tooltip:hover::after {
+    opacity: 1;
+}
+
+/* Prevent tooltip from going off-screen on right edge */
+.form-group-mini:nth-child(3n) .has-tooltip::before {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.form-group-mini:nth-child(3n) .has-tooltip::after {
+    left: auto;
+    right: 12px;
+    transform: none;
+}
+
+/* Inline Fields */
+.field-group-inline,
+.scenario-fields-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 12px 0 16px 0;
+}
+
+.form-group-mini {
+    flex: 0 0 calc(33.333% - 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group-mini label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--gray-700);
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    margin-bottom: 4px;
+}
+
+.form-group-mini input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.95em;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    transition: border-color 0.2s ease;
+    line-height: 1.4;
+    box-sizing: border-box;
+}
+
+.form-group-mini input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.field-unit-mini {
+    font-size: 0.75em;
+    color: var(--gray-500);
+    font-weight: 400;
+    margin-left: 0;
+}
+
+/* Checkbox Inline - Subtle Styling */
+.form-group-checkbox-inline {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    background: transparent;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.form-group-checkbox-inline:hover {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+.form-group-checkbox-inline label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95em;
+    cursor: pointer;
+    font-weight: 500;
+    margin: 0;
+}
+
+.form-group-checkbox-inline input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+}
+
+/* Form Row Split */
+.form-row-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+/* Validation Errors */
+.validation-errors {
+    background: rgba(220, 53, 69, 0.1);
+    border-left: 4px solid var(--error);
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 12px;
+}
+
+.validation-errors p {
+    color: var(--error);
+    font-size: 0.9em;
+    margin: 4px 0;
+}

@@ -1,0 +1,196 @@
+/* ============================================
+   LAYOUT STYLES
+   App Header, Navigation, Main Content, Sections
+   ============================================ */
+
+/* ============================================
+   APP HEADER (Sticky)
+   ============================================ */
+
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    z-index: 1000;
+    height: 60px;
+    border-bottom: 2px solid var(--gray-200);
+    transition: box-shadow var(--transition-speed), backdrop-filter var(--transition-speed);
+}
+
+.app-header.scrolled {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Single Line Header Content */
+.header-content-single {
+    max-width: var(--section-max-width);
+    margin: 0 auto;
+    padding: 0 var(--content-padding);
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+}
+
+.app-title {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Inline Navigation Tabs */
+.app-navigation-inline {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.nav-tab {
+    padding: 8px 20px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-tab:hover {
+    color: var(--primary);
+    background: rgba(102, 126, 234, 0.05);
+    border-color: rgba(102, 126, 234, 0.2);
+}
+
+.nav-tab.active {
+    color: white;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Scroll Progress */
+.scroll-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.1s ease;
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+
+.app-main {
+    margin-top: var(--header-height);
+}
+
+/* App Section */
+.app-section {
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+}
+
+.section-content {
+    max-width: var(--section-max-width);
+    margin: 0 auto;
+    padding: 40px var(--content-padding);
+}
+
+/* ============================================
+   RUN SECTION
+   ============================================ */
+
+.section-run {
+    background: linear-gradient(135deg, 
+        rgba(102, 126, 234, 0.03) 0%, 
+        rgba(118, 75, 162, 0.03) 100%
+    );
+}
+
+/* Two-Column Layout */
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 480px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.right-column {
+    position: sticky;
+    top: calc(var(--header-height) + 20px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ============================================
+   PLACEHOLDER SECTIONS
+   ============================================ */
+
+.section-history {
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.02) 0%, 
+        rgba(0, 0, 0, 0.04) 100%
+    );
+}
+
+.section-ai {
+    background: linear-gradient(135deg, 
+        rgba(118, 75, 162, 0.03) 0%, 
+        rgba(102, 126, 234, 0.03) 100%
+    );
+}
+
+.placeholder-content {
+    min-height: calc(100vh - var(--header-height) - 120px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.placeholder-icon {
+    font-size: 6em;
+    opacity: 0.3;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.placeholder-title {
+    font-size: 2em;
+    font-weight: 300;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+}
