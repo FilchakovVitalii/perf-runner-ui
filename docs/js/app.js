@@ -1025,29 +1025,7 @@ createApp({
          * Validate load configuration
          */
         validateLoadConfig() {
-            const errors = [];
-
-            if (this.loadData.users !== undefined && this.loadData.users < 1) {
-                errors.push('Users must be at least 1');
-            }
-
-            if (this.loadData.duration !== undefined && this.loadData.duration < 0) {
-                errors.push('Duration cannot be negative');
-            }
-
-            if (this.loadData.duration !== undefined &&
-                this.loadData.rampUp !== undefined &&
-                this.loadData.duration < this.loadData.rampUp) {
-                errors.push('Duration must be greater than or equal to Ramp-Up time');
-            }
-
-            if (this.loadData.minPause !== undefined &&
-                this.loadData.maxPause !== undefined &&
-                this.loadData.minPause > this.loadData.maxPause) {
-                errors.push('Min Pause cannot be greater than Max Pause');
-            }
-
-            this.validationErrors.load = errors;
+            this.validationErrors.load = ValidationUtils.validateLoadConfig(this.loadData);
         },
 
         /**
