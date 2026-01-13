@@ -278,7 +278,7 @@ createApp({
             },
 
             // Output format
-            outputFormat: 'json',
+            outputFormat: window.CONFIG.DEFAULT_OUTPUT_FORMAT || 'json',
 
             // Presets
             builtInPresets: [],
@@ -1153,13 +1153,58 @@ createApp({
                 }
 
                 const apiUrl = `${this.config.API_BASE}/repos/${this.config.REPO_OWNER}/${this.config.REPO_NAME}/actions/workflows/${this.config.WORKFLOW_FILE}/dispatches`;
+                // Determine which format to send
+                const formatToSend = this.config.API_CONFIG.USE_SELECTED_FORMAT
+                    ? this.outputFormat
+                    : this.config.DEFAULT_OUTPUT_FORMAT;
 
+                // Prepare configuration data
+                let configData;
+                let configFormat;
+
+                if (this.config.API_CONFIG.SEND_BOTH_FORMATS) {
+                    // Send both JSON and ENV formats
+                    configData = {
+                        json: JSON.stringify(config, null, 2),
+                        env: this.generateEnvFormat(),
+                        format: formatToSend  // Preferred format
+                    };
+                    configFormat = 'both';
+                } else {
+                    // Send only selected format
+                    if (formatToSend === 'env') {
+                        configData = this.generateEnvFormat();
+                        configFormat = 'env';
+                    } else {
+                        configData = JSON.stringify(config, null, 2);
+                        configFormat = 'json';
+                    }
+                }
+
+                // Prepare payload
                 const payload = {
                     ref: this.config.BRANCH,
-                    inputs: {
-                        config: JSON.stringify(config)
-                    }
+                    inputs: {}
                 };
+
+                // Add format indicator if configured
+                if (this.config.API_CONFIG.INCLUDE_FORMAT_INDICATOR) {
+                    payload.inputs.format = configFormat;
+                }
+
+                // Add configuration data
+                if (this.config.API_CONFIG.SEND_BOTH_FORMATS) {
+                    // Send as structured object
+                    payload.inputs.config_json = configData.json;
+                    payload.inputs.config_env = configData.env;
+                    payload.inputs.preferred_format = configData.format;
+                } else {
+                    // Send as single string
+                    payload.inputs.config = configData;
+                }
+
+                console.log('📤 Sending payload with format:', configFormat);
+                console.log('📤 Payload:', payload);
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
