@@ -1,14 +1,5 @@
 /**
  * Performance Test Runner - Vue.js Application
- * Version: 0.8.0 - Security Hardened Edition
- * 
- * Critical Fixes:
- * - XSS prevention with HTML sanitization
- * - Input validation and sanitization
- * - Race condition prevention
- * - Memory leak fixes
- * - Proper error boundaries
- * - localStorage quota handling
  */
 
 const { createApp } = Vue;
@@ -221,22 +212,6 @@ const StorageUtils = {
 };
 
 // ============================================
-// Debounce Utility
-// ============================================
-
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// ============================================
 // Vue Application
 // ============================================
 
@@ -330,7 +305,11 @@ createApp({
             abortController: null,
 
             // Debounced validation function (will be created in created hook)
-            debouncedValidateLoadConfig: null
+            debouncedValidateLoadConfig: null,
+
+            // UI cleanup function 
+            uiCleanup: null
+
 
         };
     },
@@ -480,8 +459,8 @@ createApp({
     // ============================================
 
     created() {
-        // Create debounced validation function with correct context
-        this.debouncedValidateLoadConfig = debounce(() => {
+        // Create debounced validation function using UIService
+        this.debouncedValidateLoadConfig = UIService.debounce(() => {
             this.validateLoadConfig();
         }, 300);
     },
@@ -498,13 +477,14 @@ createApp({
 
         this.checkToken();
 
-        // Add event listeners
-        this.handleScroll = this.handleScroll.bind(this);
-        this.handleKeyboard = this.handleKeyboard.bind(this);
-        
-        window.addEventListener('scroll', this.handleScroll);
-        document.addEventListener('keydown', this.handleKeyboard);
-        
+        // Initialize UI Service with event handlers
+        this.uiCleanup = UIService.initialize({
+            context: this,
+            onScroll: this.handleScroll,
+            onKeyboard: this.handleKeyboard
+        });
+
+        // Trigger initial scroll handler
         this.handleScroll();
 
         // Make available for debugging
@@ -514,9 +494,10 @@ createApp({
     },
 
     beforeUnmount() {
-        // Cleanup event listeners
-        window.removeEventListener('scroll', this.handleScroll);
-        document.removeEventListener('keydown', this.handleKeyboard);
+        // Cleanup UI listeners
+        if (this.uiCleanup) {
+            this.uiCleanup();
+        }
         
         // Abort any pending requests
         if (this.abortController) {
@@ -534,70 +515,49 @@ createApp({
          * Handle keyboard shortcuts
          */
         handleKeyboard(e) {
-            // Ctrl+Enter: Submit form
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                if (this.isFormValid && !this.isSubmitting) {
-                    this.handleSubmit();
+            UIService.handleKeyboardShortcut(e, {
+                onSubmit: () => {
+                    if (this.isFormValid && !this.isSubmitting) {
+                        this.handleSubmit();
+                    }
+                },
+                onSavePreset: () => {
+                    if (this.isFormValid) {
+                        this.openSavePresetModal();
+                    }
+                },
+                onEscape: () => {
+                    if (this.modal.visible) {
+                        this.closeModal();
+                    }
+                    if (this.savePresetModal.visible) {
+                        this.closeSavePresetModal();
+                    }
                 }
-            }
-
-            // Ctrl+S: Save preset
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                if (this.isFormValid) {
-                    this.openSavePresetModal();
-                }
-            }
-
-            // Escape: Close modals
-            if (e.key === 'Escape') {
-                if (this.modal.visible) {
-                    this.closeModal();
-                }
-                if (this.savePresetModal.visible) {
-                    this.closeSavePresetModal();
-                }
-            }
+            });
         },
 
         /**
          * Scroll to section
          */
         scrollToSection(sectionName) {
-            const sectionId = `${sectionName}-section`;
-            const element = document.getElementById(sectionId);
-
-            if (element) {
-                element.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
+            UIService.scrollToSection(sectionName);
         },
 
         /**
          * Handle scroll events
          */
         handleScroll() {
-            this.isScrolled = window.scrollY > 20;
+            // Get scroll data
+            const scrollData = UIService.getScrollData();
+            this.isScrolled = scrollData.isScrolled;
+            this.scrollProgress = scrollData.progress;
 
-            const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
-            this.scrollProgress = windowHeight > 0 ? (window.scrollY / windowHeight) * 100 : 0;
-
-            // Update active section
+            // Detect active section
             const sections = ['run', 'history', 'ai'];
-            const headerOffset = 150;
-
-            for (const section of sections) {
-                const element = document.getElementById(`${section}-section`);
-                if (element) {
-                    const rect = element.getBoundingClientRect();
-                    if (rect.top <= headerOffset && rect.bottom >= headerOffset) {
-                        this.activeSection = section;
-                        break;
-                    }
-                }
+            const activeSection = UIService.detectActiveSection(sections, 150);
+            if (activeSection) {
+                this.activeSection = activeSection;
             }
         },
 
@@ -756,7 +716,7 @@ createApp({
             this.savePresetModal.icon = '🚀';
 
             this.$nextTick(() => {
-                document.getElementById('preset-name')?.focus();
+                UIService.focusElement('preset-name');
             });
         },
 
@@ -894,17 +854,12 @@ createApp({
          * Copy output to clipboard
          */
         async copyOutput() {
-            try {
-                await navigator.clipboard.writeText(this.formattedOutput);
-                this.copyButtonText = '✅';
+            const success = await UIService.copyToClipboard(this.formattedOutput);
 
-                setTimeout(() => {
-                    this.copyButtonText = '📋';
-                }, 2000);
-
+            if (success) {
+                UIService.showTemporaryFeedback(this, 'copyButtonText', '✅', '📋', 2000);
                 console.log(`✅ ${this.outputFormat.toUpperCase()} copied to clipboard`);
-            } catch (err) {
-                console.error('Copy failed:', err);
+            } else {
                 this.showSafeStatus('error', {
                     lines: ['Failed to copy to clipboard']
                 });
@@ -1078,10 +1033,7 @@ createApp({
             this.status.link = content.link || null;
 
             this.$nextTick(() => {
-                const statusEl = document.querySelector('.status-card');
-                if (statusEl) {
-                    statusEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
+                UIService.scrollToElement('.status-card', { block: 'nearest' });
             });
         },
 
@@ -1112,7 +1064,7 @@ createApp({
         openModal() {
             this.modal.visible = true;
             this.$nextTick(() => {
-                document.getElementById('github-token')?.focus();
+                UIService.focusElement('github-token');
             });
         },
 
