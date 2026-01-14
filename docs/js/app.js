@@ -4,221 +4,26 @@
 
 const { createApp } = Vue;
 
-// ============================================
-// Security Utilities
-// ============================================
-
-/**
- * HTML Sanitizer - Prevents XSS attacks
- */
-const SecurityUtils = {
-    /**
-     * Escape HTML entities to prevent XSS
-     */
-    escapeHtml(text) {
-        if (typeof text !== 'string') return text;
-        
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;',
-            '/': '&#x2F;'
-        };
-        
-        return text.replace(/[&<>"'/]/g, m => map[m]);
-    },
-
-    /**
-     * Sanitize user input - removes dangerous characters
-     */
-    sanitizeInput(input, maxLength = 1000) {
-        if (typeof input !== 'string') return String(input);
-        
-        // Remove control characters except newlines
-        let sanitized = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-        
-        // Limit length
-        sanitized = sanitized.substring(0, maxLength);
-        
-        return sanitized.trim();
-    },
-
-    /**
-     * Validate URL format
-     */
-    isValidUrl(url) {
-        try {
-            const parsed = new URL(url);
-            return ['http:', 'https:'].includes(parsed.protocol);
-        } catch {
-            return false;
-        }
-    },
-
-    /**
-     * Validate emoji/icon (single emoji only)
-     */
-    sanitizeEmoji(input) {
-        if (typeof input !== 'string') return '🚀';
-        
-        // Get first character (handles multi-byte emojis)
-        const firstEmoji = Array.from(input.trim())[0];
-        
-        // If empty or just whitespace, return default
-        if (!firstEmoji) return '🚀';
-        
-        // Check if it's likely an emoji (basic check)
-        // Emojis are typically in Unicode ranges: 0x1F000-0x1FFFF
-        const codePoint = firstEmoji.codePointAt(0);
-        if (codePoint >= 0x1F000 && codePoint <= 0x1FFFF) {
-            return firstEmoji;
-        }
-        
-        // Allow common emoji ranges
-        if (codePoint >= 0x2600 && codePoint <= 0x26FF) {
-            return firstEmoji;
-        }
-        
-        // Default fallback
-        return '🚀';
-    },
-
-    /**
-     * Validate GitHub token format
-     */
-    isValidGitHubToken(token) {
-        if (typeof token !== 'string') return false;
-        
-        // Classic tokens start with ghp_
-        // Fine-grained tokens start with github_pat_
-        return (
-            (token.startsWith('ghp_') && token.length >= 40) ||
-            (token.startsWith('github_pat_') && token.length >= 82)
-        );
-    },
-
-    /**
-     * Create safe HTML structure without v-html
-     * Returns object that can be rendered safely
-     */
-    createSafeStatusMessage(type, content) {
-        // Create structured content that Vue can render safely
-        return {
-            type,
-            lines: content.lines || [],
-            list: content.list || [],
-            link: content.link ? {
-                text: this.escapeHtml(content.link.text),
-                url: this.isValidUrl(content.link.url) ? content.link.url : '#'
-            } : null
-        };
-    }
-};
-
-// ============================================
-// Storage Utilities with Error Handling
-// ============================================
-
-const StorageUtils = {
-    /**
-     * Safely get item from localStorage
-     */
-    getItem(key, defaultValue = null) {
-        try {
-            const item = localStorage.getItem(key);
-            return item !== null ? item : defaultValue;
-        } catch (error) {
-            console.error(`Failed to get ${key} from localStorage:`, error);
-            return defaultValue;
-        }
-    },
-
-    /**
-     * Safely set item to localStorage with quota handling
-     */
-    setItem(key, value) {
-        try {
-            localStorage.setItem(key, value);
-            return true;
-        } catch (error) {
-            if (error.name === 'QuotaExceededError') {
-                console.error('localStorage quota exceeded');
-                
-                // Try to free up space by removing old items
-                try {
-                    // Remove oldest presets if quota exceeded
-                    const presets = this.getJSON('perf_runner_presets', []);
-                    if (presets.length > 5) {
-                        // Keep only 5 most recent
-                        const trimmed = presets.slice(-5);
-                        localStorage.setItem('perf_runner_presets', JSON.stringify(trimmed));
-                        
-                        // Try again
-                        localStorage.setItem(key, value);
-                        return true;
-                    }
-                } catch (retryError) {
-                    console.error('Failed to free up space:', retryError);
-                }
-                
-                throw new Error('Storage quota exceeded. Please delete some presets.');
-            }
-            
-            console.error(`Failed to set ${key} in localStorage:`, error);
-            throw error;
-        }
-    },
-
-    /**
-     * Safely get JSON from localStorage
-     */
-    getJSON(key, defaultValue = null) {
-        try {
-            const item = this.getItem(key);
-            return item ? JSON.parse(item) : defaultValue;
-        } catch (error) {
-            console.error(`Failed to parse JSON from ${key}:`, error);
-            return defaultValue;
-        }
-    },
-
-    /**
-     * Safely set JSON to localStorage
-     */
-    setJSON(key, value) {
-        try {
-            const json = JSON.stringify(value);
-            return this.setItem(key, json);
-        } catch (error) {
-            console.error(`Failed to stringify JSON for ${key}:`, error);
-            throw error;
-        }
-    },
-
-    /**
-     * Remove item from localStorage
-     */
-    removeItem(key) {
-        try {
-            localStorage.removeItem(key);
-            return true;
-        } catch (error) {
-            console.error(`Failed to remove ${key} from localStorage:`, error);
-            return false;
-        }
-    }
-};
-
-// ============================================
-// Vue Application
-// ============================================
-
 createApp({
     // ============================================
     // Data - Reactive State
     // ============================================
+    errorCaptured(err, instance, info) {
+        console.error('Vue Error:', err);
+        console.error('Component:', instance);
+        console.error('Info:', info);
+        
+        this.showSafeStatus('error', {
+            lines: [
+                'An unexpected error occurred',
+                err.message
+            ]
+        });
+        
+        // Prevent error from propagating
+        return false;
+    },
+
     data() {
         return {
             // App configuration
@@ -1107,9 +912,31 @@ createApp({
     }
 }).mount('#app');
 
-// ============================================
-// Console Utilities
-// ============================================
-console.log('💡 Vue app available via: window.vueApp');
-console.log('💡 Security utilities: SecurityUtils');
-console.log('💡 Storage utilities: StorageUtils');
+// Global error handler (add to app.js at the end)
+window.addEventListener('error', (event) => {
+    console.error('Global Error:', event.error);
+    
+    // Show user-friendly message
+    if (window.vueApp) {
+        window.vueApp.showSafeStatus('error', {
+            lines: [
+                'An unexpected error occurred',
+                'Please refresh the page'
+            ]
+        });
+    }
+});
+
+// Unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled Promise Rejection:', event.reason);
+    
+    if (window.vueApp) {
+        window.vueApp.showSafeStatus('error', {
+            lines: [
+                'An async operation failed',
+                event.reason?.message || 'Unknown error'
+            ]
+        });
+    }
+});
