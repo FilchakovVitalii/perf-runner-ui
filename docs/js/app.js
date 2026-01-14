@@ -673,97 +673,24 @@ createApp({
          * Initialize built-in presets
          */
         initializePresets() {
-            this.builtInPresets = [
-                {
-                    id: 'smoke-sandbox',
-                    name: 'Quick Smoke',
-                    icon: '🔥',
-                    description: 'Fast smoke test on sandbox environment',
-                    config: {
-                        selections: {
-                            loadType: 'smoke',
-                            environment: 'sandbox',
-                            scenario: 'project.scenario.ScenarioName'
-                        }
-                    }
-                },
-                {
-                    id: 'capacity-stage',
-                    name: 'Capacity Stage',
-                    icon: '📊',
-                    description: 'Full capacity test on staging environment',
-                    config: {
-                        selections: {
-                            loadType: 'capacity',
-                            environment: 'stage',
-                            scenario: 'project.scenario.ScenarioName'
-                        }
-                    }
-                },
-                {
-                    id: 'longevity-sandbox',
-                    name: 'Longevity',
-                    icon: '⏱️',
-                    description: 'Long-running stability test on sandbox',
-                    config: {
-                        selections: {
-                            loadType: 'longevity',
-                            environment: 'sandbox',
-                            scenario: 'project.scenario.ScenarioName'
-                        }
-                    }
-                },
-                {
-                    id: 'quick-validation',
-                    name: 'Quick Validation',
-                    icon: '🎯',
-                    description: 'Quick validation test with minimal config',
-                    config: {
-                        selections: {
-                            loadType: 'smoke',
-                            environment: 'sandbox',
-                            scenario: 'project.scenario.ScenarioNoAdditionalFields'
-                        }
-                    }
-                }
-            ];
-
-            this.loadUserPresets();
-
-            console.log('✅ Presets initialized');
+            const presets = PresetService.initialize();
+            this.builtInPresets = presets.builtInPresets;
+            this.userPresets = presets.userPresets;
         },
 
         /**
          * Load user presets from localStorage
          */
         loadUserPresets() {
-            try {
-                const presets = StorageUtils.getJSON('perf_runner_presets', []);
-                
-                // Validate and sanitize each preset
-                this.userPresets = presets
-                    .filter(p => p && p.id && p.name)
-                    .map(p => ({
-                        ...p,
-                        name: SecurityUtils.sanitizeInput(p.name, 50),
-                        description: SecurityUtils.sanitizeInput(p.description || '', 100),
-                        icon: SecurityUtils.sanitizeEmoji(p.icon)
-                    }));
-                
-                console.log('📂 Loaded user presets:', this.userPresets.length);
-            } catch (error) {
-                console.error('Failed to load user presets:', error);
-                this.userPresets = [];
-            }
+            this.userPresets = PresetService.loadUserPresets();
         },
-
+        
         /**
          * Save user presets to localStorage
          */
         saveUserPresets() {
             try {
-                StorageUtils.setJSON('perf_runner_presets', this.userPresets);
-                console.log('💾 Saved user presets');
+                PresetService.saveUserPresets(this.userPresets);
                 return true;
             } catch (error) {
                 console.error('Failed to save user presets:', error);
@@ -844,62 +771,54 @@ createApp({
          * Save current configuration as preset
          */
         savePreset() {
-            // Sanitize inputs
-            const name = SecurityUtils.sanitizeInput(this.savePresetModal.name, 50);
-            const description = SecurityUtils.sanitizeInput(this.savePresetModal.description, 100);
-            const icon = SecurityUtils.sanitizeEmoji(this.savePresetModal.icon);
+            const name = this.savePresetModal.name;
+            const description = this.savePresetModal.description;
+            const icon = this.savePresetModal.icon;
 
-            if (!name) {
+            if (!name || !name.trim()) {
                 alert('Please enter a preset name');
                 return;
             }
 
             // Check if name already exists
-            if (this.userPresets.some(p => p.name === name)) {
+            if (this.userPresets.some(p => p.name.trim() === name.trim())) {
                 if (!confirm(`A preset named "${name}" already exists. Overwrite it?`)) {
                     return;
                 }
-                this.userPresets = this.userPresets.filter(p => p.name !== name);
             }
 
-            // Check preset limit
-            if (this.userPresets.length >= 20) {
-                alert('Maximum 20 user presets allowed. Please delete some presets first.');
-                return;
-            }
-
-            const preset = {
-                id: 'user-' + Date.now(),
-                name,
-                description,
-                icon,
-                created: new Date().toISOString(),
-                config: {
-                    selections: {
-                        loadType: this.selection.loadType,
-                        environment: this.selection.environment,
-                        targetUrl: this.selection.targetUrl,
-                        scenario: this.selection.scenario
-                    },
-                    loadData: { ...this.loadData },
-                    scenarioData: { ...this.scenarioData }
-                }
+            // Create preset using service
+            const config = {
+                selections: {
+                    loadType: this.selection.loadType,
+                    environment: this.selection.environment,
+                    targetUrl: this.selection.targetUrl,
+                    scenario: this.selection.scenario
+                },
+                loadData: { ...this.loadData },
+                scenarioData: { ...this.scenarioData }
             };
 
-            this.userPresets.push(preset);
+            try {
+                const newPreset = PresetService.createPreset(name, description, icon, config);
+                const result = PresetService.addPreset(this.userPresets, newPreset);
 
-            if (!this.saveUserPresets()) {
-                // Rollback if save failed
-                this.userPresets = this.userPresets.filter(p => p.id !== preset.id);
-                return;
+                if (result.success) {
+                    this.userPresets = result.presets;
+                    this.activePreset = newPreset.id;
+                    this.closeSavePresetModal();
+
+                    this.showSafeStatus('success', {
+                        lines: [`Preset "${SecurityUtils.escapeHtml(name)}" saved successfully!`]
+                    });
+                } else {
+                    alert(result.error || 'Failed to save preset');
+                }
+
+            } catch (error) {
+                console.error('Failed to save preset:', error);
+                alert(error.message || 'Failed to save preset');
             }
-
-            this.closeSavePresetModal();
-            this.activePreset = preset.id;
-
-            this.showSafeStatus('success', {
-                lines: [`Preset "${SecurityUtils.escapeHtml(name)}" saved successfully!`]
-            });
         },
 
         /**
@@ -914,16 +833,21 @@ createApp({
                 return;
             }
 
-            this.userPresets = this.userPresets.filter(p => p.id !== presetId);
-            this.saveUserPresets();
+            const result = PresetService.deletePreset(this.userPresets, presetId);
 
-            if (this.activePreset === presetId) {
-                this.activePreset = null;
+            if (result.success) {
+                this.userPresets = result.presets;
+
+                if (this.activePreset === presetId) {
+                    this.activePreset = null;
+                }
+
+                this.showSafeStatus('info', {
+                    lines: [`Preset "${SecurityUtils.escapeHtml(result.deletedPreset.name)}" deleted`]
+                });
+            } else {
+                alert(result.error || 'Failed to delete preset');
             }
-
-            this.showSafeStatus('info', {
-                lines: [`Preset "${SecurityUtils.escapeHtml(preset.name)}" deleted`]
-            });
         },
 
         /**
