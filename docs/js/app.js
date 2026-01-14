@@ -619,29 +619,10 @@ createApp({
          * Generate field definitions from config object
          */
         generateFields(configObject, metadataSource) {
-            return Object.entries(configObject).map(([key, value]) => {
-                const metadata = metadataSource[key] || {};
-
-                if (!metadataSource[key]) {
-                    console.warn(`⚠️ Missing metadata for field: "${key}"`);
-                }
-
-                return {
-                    name: key,
-                    value: value,
-                    type: this.detectFieldType(value, metadata),
-                    label: metadata.label || this.formatLabel(key),
-                    help: metadata.help || '',
-                    unit: metadata.unit || '',
-                    min: this.getMinValue(key, metadata)
-                };
-            });
+            return FieldUtils.generateFields(configObject, metadataSource);
         },
 
         /**
-         * Generate JSON format output
-         */
-                /**
          * Generate JSON format output
          */
         generateJsonFormat() {
@@ -669,40 +650,6 @@ createApp({
                     lines: ['Failed to copy to clipboard']
                 });
             }
-        },
-
-        detectFieldType(value, metadata) {
-            if (metadata.type) return metadata.type.toLowerCase();
-
-            const valueType = typeof value;
-
-            if (valueType === 'boolean') return 'boolean';
-            if (valueType === 'number') return 'number';
-            if (valueType === 'string') return 'text';
-
-            if (Array.isArray(value)) {
-                console.warn('Array type detected, defaulting to text:', value);
-                return 'text';
-            }
-
-            console.warn('Unknown type, defaulting to text:', valueType, value);
-            return 'text';
-        },
-
-        formatLabel(fieldName) {
-            return fieldName
-                .replace(/([A-Z])/g, ' $1')
-                .replace(/_/g, ' ')
-                .replace(/^./, str => str.toUpperCase())
-                .trim();
-        },
-
-        getMinValue(fieldName, metadata) {
-            if (metadata.min !== undefined) return metadata.min;
-            if (fieldName === 'users') return 1;
-            if (fieldName.includes('duration') || fieldName.includes('Duration')) return 0;
-            if (fieldName.includes('ramp') || fieldName.includes('Ramp')) return 0;
-            return undefined;
         },
 
         /**
@@ -853,8 +800,7 @@ createApp({
          * Check if token exists
          */
         checkToken() {
-            const token = StorageUtils.getItem(this.config.TOKEN_STORAGE_KEY);
-            this.hasToken = !!token && SecurityUtils.isValidGitHubToken(token);
+            this.hasToken = TokenService.hasValidToken();
 
             if (this.hasToken) {
                 console.log('✅ Valid GitHub token found');
@@ -863,6 +809,52 @@ createApp({
             }
         },
 
+        /**
+         * Save GitHub token
+         */
+        saveToken() {
+            const token = this.modal.tokenInput.trim();
+
+            if (!token) {
+                alert('Please enter a valid token');
+                return;
+            }
+
+            // Try to save with validation
+            const result = TokenService.saveToken(token, { validate: true });
+
+            if (result.success) {
+                this.hasToken = true;
+                this.closeModal();
+                
+                this.showSafeStatus('success', {
+                    lines: ['Token saved successfully! You can now trigger tests.']
+                });
+            } else if (result.warning) {
+                // Token format unusual, ask for confirmation
+                const confirmed = confirm(
+                    `${result.message}\n\nDo you want to save it anyway?`
+                );
+                
+                if (confirmed) {
+                    const forceResult = TokenService.saveToken(token, { validate: false, force: true });
+                    
+                    if (forceResult.success) {
+                        this.hasToken = true;
+                        this.closeModal();
+                        
+                        this.showSafeStatus('success', {
+                            lines: ['Token saved successfully! You can now trigger tests.']
+                        });
+                    } else {
+                        alert(`Failed to save token: ${forceResult.message}`);
+                    }
+                }
+            } else {
+                alert(`Failed to save token: ${result.message}`);
+            }
+        },
+        
         /**
          * Open token modal
          */
@@ -879,36 +871,8 @@ createApp({
         closeModal() {
             this.modal.visible = false;
             this.modal.tokenInput = '';
-        },
-
-        /**
-         * Save GitHub token
-         */
-        saveToken() {
-            const token = this.modal.tokenInput.trim();
-
-            if (!token) {
-                alert('Please enter a valid token');
-                return;
-            }
-
-            if (!SecurityUtils.isValidGitHubToken(token)) {
-                const confirmed = confirm('Token format looks unusual. Are you sure this is a valid GitHub token?');
-                if (!confirmed) return;
-            }
-
-            try {
-                StorageUtils.setItem(this.config.TOKEN_STORAGE_KEY, token);
-                this.hasToken = true;
-                this.closeModal();
-                
-                this.showSafeStatus('success', {
-                    lines: ['Token saved successfully! You can now trigger tests.']
-                });
-            } catch (error) {
-                alert(`Failed to save token: ${error.message}`);
-            }
         }
+
     }
 }).mount('#app');
 
