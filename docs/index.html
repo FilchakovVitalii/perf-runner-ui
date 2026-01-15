@@ -725,7 +725,45 @@
     <!-- Configuration -->
     <script src="js/config.js"></script>
 
+    <!-- Core Utilities (NO dependencies - load first) -->
+    <script src="js/utils/security.js"></script>
+    <script src="js/utils/storage.js"></script>
+
+    <!-- Utilities -->
+    <script src="js/utils/fields.js"></script>
+    <script src="js/utils/formatters.js"></script>
+    <script src="js/utils/validators.js"></script>
+    <script src="js/utils/github-api.js"></script>
+    <!-- Services -->
+    <script src="js/services/TokenService.js"></script>
+    <script src="js/services/PresetService.js"></script>
+    <script src="js/services/UIService.js"></script>
     <!-- Vue Application -->
     <script src="js/app.js"></script>
+    
+    <script>
+      // Verify all modules loaded correctly
+      (function verifyModules() {
+        const requiredModules = [
+          'CONFIG',
+          'SecurityUtils',
+          'StorageUtils',
+          'FormatUtils',
+          'ValidationUtils',
+          'GitHubAPI',
+          'PresetService',
+          'UIService'
+        ];
+
+        const missing = requiredModules.filter(module => !window[module]);
+
+        if (missing.length > 0) {
+          console.error('❌ Missing modules:', missing);
+          alert('Failed to load required modules. Please refresh the page.');
+        } else {
+          console.log('✅ All modules loaded successfully');
+        }
+      })();
+    </script>
   </body>
 </html>
