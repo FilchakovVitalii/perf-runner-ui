@@ -208,8 +208,9 @@
                         v-if="loadConfigFields.length > 0"
                         class="field-group-inline"
                       >
+                        <!-- Standard Load Fields -->
                         <template
-                          v-for="(field, index) in loadConfigFields"
+                          v-for="(field, index) in standardLoadFields"
                           :key="field.name"
                         >
                           <!-- Number fields in rows of 3 -->
@@ -238,7 +239,7 @@
                               required
                             />
                           </div>
-
+                      
                           <!-- Checkboxes inline -->
                           <div
                             v-else-if="field.type === 'boolean'"
@@ -256,7 +257,7 @@
                               <span>{{ field.label }}</span>
                             </label>
                           </div>
-
+                      
                           <!-- Text fields full width -->
                           <div
                             v-else
@@ -277,7 +278,42 @@
                             />
                           </div>
                         </template>
-
+                      
+                        <!-- Warmup Section (if warmup fields exist) -->
+                        <div v-if="warmupFields.length > 0" class="warmup-section-inline">
+                          <h5 class="warmup-title-inline">
+                            🔥 Warmup Configuration
+                          </h5>
+                          
+                          <div class="warmup-fields-group">
+                            <div
+                              v-for="field in warmupFields"
+                              :key="field.name"
+                              class="form-group-mini"
+                            >
+                              <label
+                                :for="'load-' + field.name"
+                                :class="{ 'has-tooltip': field.help }"
+                                :data-tooltip="field.help"
+                              >
+                                {{ field.label }}
+                                <span
+                                  v-if="field.unit"
+                                  class="field-unit-mini"
+                                  >{{ field.unit }}</span
+                                >
+                              </label>
+                              <input
+                                v-if="field.type === 'number'"
+                                :id="'load-' + field.name"
+                                type="number"
+                                v-model.number="loadData[field.name]"
+                                :min="field.min"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      
                         <!-- Validation Errors -->
                         <div
                           v-if="validationErrors.load.length > 0"
@@ -477,6 +513,7 @@
                       <label
                         class="format-option"
                         :class="{ active: outputFormat === 'json' }"
+                        title="Canonical JSON format (primary payload)"
                       >
                         <input
                           type="radio"
@@ -488,6 +525,7 @@
                       <label
                         class="format-option"
                         :class="{ active: outputFormat === 'env' }"
+                        title="Environment variables (strict encoding)"
                       >
                         <input
                           type="radio"
@@ -495,6 +533,18 @@
                           v-model="outputFormat"
                         />
                         <span>ENV</span>
+                      </label>
+                      <label
+                        class="format-option"
+                        :class="{ active: outputFormat === 'hocon' }"
+                        title="HOCON format (preview)"
+                      >
+                        <input
+                          type="radio"
+                          value="hocon"
+                          v-model="outputFormat"
+                        />
+                        <span>HOCON</span>
                       </label>
                     </div>
                   </div>
@@ -728,12 +778,15 @@
     <!-- Core Utilities (NO dependencies - load first) -->
     <script src="js/utils/security.js"></script>
     <script src="js/utils/storage.js"></script>
-
     <!-- Utilities -->
     <script src="js/utils/fields.js"></script>
     <script src="js/utils/formatters.js"></script>
     <script src="js/utils/validators.js"></script>
     <script src="js/utils/github-api.js"></script>
+    <!--Canonical format utilities -->
+    <script src="js/utils/canonical-mapper.js"></script>
+    <script src="js/utils/env-encoder.js"></script>
+    <script src="js/utils/hocon-formatter.js"></script>
     <!-- Services -->
     <script src="js/services/TokenService.js"></script>
     <script src="js/services/PresetService.js"></script>
