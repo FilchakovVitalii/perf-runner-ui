@@ -62,7 +62,7 @@ createApp({
             },
 
             // Output format - support HOCON now
-            outputFormat: window.CONFIG.DEFAULT_OUTPUT_FORMAT || 'json',
+            outputFormat: window.CONFIG.app.defaultOutputFormat || 'json',
 
             // Presets
             builtInPresets: [],
@@ -808,7 +808,7 @@ createApp({
                 const result = await GitHubAPI.triggerWorkflow(
                     canonicalConfig,
                     token,
-                    this.config.API_CONFIG,
+                    this.config.github,
                     'canonical'
                 );
 

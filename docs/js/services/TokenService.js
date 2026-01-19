@@ -10,9 +10,9 @@ const TokenService = {
      * Storage key for GitHub token
      */
     get STORAGE_KEY() {
-        return window.CONFIG?.TOKEN_STORAGE_KEY || 'github_token';
+        return window.CONFIG?.storage?.tokenKey || 'perf_runner_github_token';
     },
-
+    
     /**
      * Check if a valid token exists
      * @returns {boolean} True if valid token exists

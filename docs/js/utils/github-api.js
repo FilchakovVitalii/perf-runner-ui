@@ -10,33 +10,33 @@ const GitHubAPI = {
      * Trigger GitHub Actions workflow
      * @param {Object} config - Test configuration
      * @param {string} token - GitHub personal access token
-     * @param {Object} apiConfig - API configuration (owner, repo, workflow)
+     * @param {Object} githubConfig - API configuration (owner, repo, workflow)
      * @param {string} format - Output format (json/env/canonical/hocon)
      * @returns {Promise<Object>} Result object with success status and data
      */
-    async triggerWorkflow(config, token, apiConfig, format = 'json') {
-        try {
-            // Validate token
-            if (!token || !SecurityUtils.isValidGitHubToken(token)) {
-                return {
-                    success: false,
-                    message: 'Invalid or missing GitHub token'
-                };
-            }
+async triggerWorkflow(config, token, githubConfig, format = 'json') {
+    try {
+        // Validate token
+        if (!token || !SecurityUtils.isValidGitHubToken(token)) {
+            return {
+                success: false,
+                message: 'Invalid or missing GitHub token'
+            };
+        }
 
-            // Validate API config
-            if (!apiConfig || !apiConfig.owner || !apiConfig.repo || !apiConfig.workflow) {
-                return {
-                    success: false,
-                    message: 'Invalid API configuration'
-                };
-            }
+        // Validate GitHub config
+        if (!githubConfig || !githubConfig.owner || !githubConfig.repo || !githubConfig.workflow) {
+            return {
+                success: false,
+                message: 'Invalid GitHub configuration. Check js/config.js'
+            };
+        }
 
-            // Store API config for use in other methods
-            this.apiConfig = apiConfig;
+        // Store for use in other methods
+        this.githubConfig = githubConfig;
 
-            // Build API URL
-            const url = this.buildApiUrl(apiConfig);
+        // Build API URL
+        const url = this.buildApiUrl(githubConfig);
 
             // Build payload
             const payload = this.buildPayload(config, format);
@@ -58,7 +58,7 @@ const GitHubAPI = {
             // Handle response
             if (response.status === 204) {
                 // Success (204 No Content is expected response)
-                return this.handleSuccess(config, apiConfig);
+                return this.handleSuccess(config, githubConfig);
             } else {
                 // Error
                 const errorData = await response.json().catch(() => ({}));
@@ -74,14 +74,14 @@ const GitHubAPI = {
         }
     },
 
-    /**
-     * Build GitHub API URL
-     * @param {Object} apiConfig - API configuration
-     * @returns {string} Full API URL
-     */
-    buildApiUrl(apiConfig) {
-        return `https://api.github.com/repos/${apiConfig.owner}/${apiConfig.repo}/actions/workflows/${apiConfig.workflow}/dispatches`;
-    },
+/**
+ * Build GitHub API URL
+ * @param {Object} githubConfig - GitHub configuration (from CONFIG.github)
+ * @returns {string} Full API URL
+ */
+buildApiUrl(githubConfig) {
+    return `${githubConfig.apiBase}/repos/${githubConfig.owner}/${githubConfig.repo}/actions/workflows/${githubConfig.workflow}/dispatches`;
+},
 
     /**
      * Build GitHub Actions workflow dispatch payload
@@ -113,7 +113,7 @@ const GitHubAPI = {
         const profileConfig = canonical.test.load.profiles[profileKey];
 
         return {
-            ref: this.apiConfig.branch,
+            ref: this.githubConfig.branch,
             inputs: {
                 // Primary configuration as JSON string
                 config_json: JSON.stringify(canonical),
@@ -160,7 +160,7 @@ const GitHubAPI = {
         }
 
         return {
-            ref: this.apiConfig.branch,
+            ref: this.githubConfig.branch,
             inputs: {
                 config_data: configString,
                 load_type: config.loadType,
@@ -177,10 +177,11 @@ const GitHubAPI = {
     /**
      * Handle successful workflow trigger
      * @param {Object} config - Configuration that was sent
-     * @param {Object} apiConfig - API configuration
+     * @param {Object} githubConfig - API configuration
      * @returns {Object} Success result object
      */
-    handleSuccess(config, apiConfig) {
+    handleSuccess(config, githubConfig) {
+
         // Check if canonical or legacy format
         const isCanonical = config.test && config.test.simulation;
 
@@ -209,8 +210,7 @@ const GitHubAPI = {
             };
         }
 
-        const actionsUrl = `https://github.com/${apiConfig.owner}/${apiConfig.repo}/actions/workflows/${apiConfig.workflow}`;
-
+        const actionsUrl = `https://github.com/${githubConfig.owner}/${githubConfig.repo}/actions/workflows/${githubConfig.workflow}`;
         return {
             success: true,
             message: 'Workflow triggered successfully',
@@ -251,14 +251,13 @@ const GitHubAPI = {
     /**
      * Get recent workflow runs
      * @param {string} token - GitHub personal access token
-     * @param {Object} apiConfig - API configuration
+     * @param {Object} githubConfig - API configuration
      * @param {number} limit - Number of runs to fetch (default: 10)
      * @returns {Promise<Object>} Result with workflow runs data
      */
-    async getWorkflowRuns(token, apiConfig, limit = 10) {
-        try {
-            const url = `https://api.github.com/repos/${apiConfig.owner}/${apiConfig.repo}/actions/workflows/${apiConfig.workflow}/runs?per_page=${limit}`;
-
+async getWorkflowRuns(token, githubConfig, limit = 10) {
+    try {
+        const url = `${githubConfig.apiBase}/repos/${githubConfig.owner}/${githubConfig.repo}/actions/workflows/${githubConfig.workflow}/runs?per_page=${limit}`;
             const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
