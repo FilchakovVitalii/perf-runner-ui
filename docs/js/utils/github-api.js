@@ -102,38 +102,50 @@ buildApiUrl(githubConfig) {
     },
 
     /**
-     * Build payload from canonical configuration (NEW)
+     * Build payload from canonical configuration (FORMAT-AWARE)
+     * Simplified to match GitHub Actions workflow inputs: format + config
      * @param {Object} canonical - Canonical configuration object
-     * @param {string} format - Output format preference
+     * @param {string} format - Output format (json/env/hocon)
      * @returns {Object} Workflow dispatch payload
      */
-    buildCanonicalPayload(canonical, format) {
-        // Extract main profile config
-        const profileKey = canonical.test.type;
-        const profileConfig = canonical.test.load.profiles[profileKey];
-
-        return {
+     buildCanonicalPayload(canonical, format) {
+        // Determine config string based on format
+        let configString;
+        
+        switch (format) {
+            case 'env':
+                // Encode to ENV format (double-underscore)
+                configString = EnvEncoder.encode(canonical);
+                console.log('📦 Sending ENV format configuration');
+                break;
+    
+            case 'hocon':
+                // Format as HOCON
+                configString = HoconFormatter.format(canonical);
+                console.log('📦 Sending HOCON format configuration');
+                break;
+    
+            case 'json':
+            default:
+                // Stringify as JSON (default)
+                configString = JSON.stringify(canonical);
+                console.log('📦 Sending JSON format configuration');
+                break;
+        }
+    
+        // Build simplified payload matching GitHub Actions workflow
+        const payload = {
             ref: this.githubConfig.branch,
             inputs: {
-                // Primary configuration as JSON string
-                config_json: JSON.stringify(canonical),
-                
-                // Flat fields for workflow convenience
-                load_type: canonical.test.type,
-                environment: canonical.test.environment.type,
-                target_url: canonical.test.environment.url,
-                scenario: canonical.test.simulation,
-                
-                // Load parameters
-                users: String(profileConfig.users || 1),
-                duration: String(profileConfig.duration || 60),
-                ramp_up: String(profileConfig.rampUp || 0),
-                
-                // Format preference
-                output_format: format || 'json'
+                format: format || 'json',  // Format type
+                config: configString       // Configuration data
             }
         };
-    },
+    
+    console.log(`✅ Payload ready: format=${payload.inputs.format}, config length=${payload.inputs.config.length} chars`);
+    
+    return payload;
+},
 
     /**
      * Build payload from legacy configuration (backward compatibility)
@@ -215,7 +227,10 @@ buildApiUrl(githubConfig) {
             success: true,
             message: 'Workflow triggered successfully',
             data: data,
-            link: actionsUrl
+            link: {
+                url: actionsUrl,
+                text: 'View workflow runs'
+            }
         };
     },
 

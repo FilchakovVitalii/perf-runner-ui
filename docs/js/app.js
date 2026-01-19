@@ -809,7 +809,7 @@ createApp({
                     canonicalConfig,
                     token,
                     this.config.github,
-                    'canonical'
+                    this.outputFormat
                 );
 
                 if (result.success) {

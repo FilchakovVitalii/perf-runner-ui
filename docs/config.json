@@ -67,7 +67,8 @@
             "description": "Main scenario with cache and cookie options",
             "fields": {
                 "cookies_deny": false,
-                "use_cache": true
+                "use_cache": true,
+                "TEST_PAYLOAD": true
             }
         },
         "project.scenario.ScenarioOther": {
@@ -141,6 +142,10 @@
         "custom_digit_param": {
             "label": "Custom Digit Parameter",
             "help": "Custom numeric value for scenario"
+        },
+        "TEST_PAYLOAD":{
+            "label": "useTestPayloads",
+            "help": "the payloads that includes parameters, to filter them before 3rd party"
         }
     }
 }
