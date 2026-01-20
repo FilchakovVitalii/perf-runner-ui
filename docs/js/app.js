@@ -1,12 +1,13 @@
 /**
  * Performance Test Runner - Vue.js Application
+ * v0.9.0 - HOCON-compatible configuration support
  */
 
 const { createApp } = Vue;
 
 createApp({
     // ============================================
-    // Data - Reactive State
+    // Error Handler
     // ============================================
     errorCaptured(err, instance, info) {
         console.error('Vue Error:', err);
@@ -24,11 +25,14 @@ createApp({
         return false;
     },
 
+    // ============================================
+    // Data - Reactive State
+    // ============================================
     data() {
         return {
             // App configuration
             config: window.CONFIG,
-            version: window.CONFIG.VERSION,
+            version: '0.9.0',
 
             // Test configuration (loaded from config.json)
             testConfig: null,
@@ -57,8 +61,8 @@ createApp({
                 scenario: []
             },
 
-            // Output format
-            outputFormat: window.CONFIG.DEFAULT_OUTPUT_FORMAT || 'json',
+            // Output format - support HOCON now
+            outputFormat: window.CONFIG.app.defaultOutputFormat || 'json',
 
             // Presets
             builtInPresets: [],
@@ -83,7 +87,7 @@ createApp({
             isScrolled: false,
             scrollProgress: 0,
 
-            // Status display - CHANGED to safe structure
+            // Status display
             status: {
                 visible: false,
                 type: 'info',
@@ -109,13 +113,11 @@ createApp({
             // Abort controller for fetch requests
             abortController: null,
 
-            // Debounced validation function (will be created in created hook)
+            // Debounced validation function
             debouncedValidateLoadConfig: null,
 
             // UI cleanup function 
             uiCleanup: null
-
-
         };
     },
 
@@ -161,7 +163,44 @@ createApp({
                 this.validationErrors.scenario.length > 0;
         },
 
-        currentConfig() {
+        /**
+         * Split load fields into standard and warmup groups
+         */
+        standardLoadFields() {
+            return this.loadConfigFields.filter(field => 
+                !field.name.toLowerCase().includes('warmup')
+            );
+        },
+
+        warmupFields() {
+            return this.loadConfigFields.filter(field => 
+                field.name.toLowerCase().includes('warmup')
+            );
+        },
+
+        /**
+         * Current configuration in new canonical format
+         */
+        currentCanonicalConfig() {
+            if (!this.isFormValid) return null;
+
+            return CanonicalMapper.toCanonical(
+                {
+                    loadType: this.selection.loadType,
+                    environment: this.selection.environment,
+                    targetUrl: this.selection.targetUrl,
+                    scenario: this.selection.scenario
+                },
+                this.loadData,
+                this.scenarioData,
+                this.testConfig
+            );
+        },
+
+        /**
+         * Legacy config format (for backward compatibility)
+         */
+        currentLegacyConfig() {
             return {
                 loadType: this.selection.loadType,
                 loadConfig: { ...this.loadData },
@@ -173,15 +212,26 @@ createApp({
             };
         },
 
+        /**
+         * Formatted output based on selected format
+         */
         formattedOutput() {
             if (!this.isFormValid) {
                 return 'Select all required options to generate configuration...';
             }
 
-            if (this.outputFormat === 'env') {
-                return this.generateEnvFormat();
-            } else {
-                return this.generateJsonFormat();
+            switch (this.outputFormat) {
+                case 'json':
+                    return this.generateCanonicalJSON();
+                
+                case 'env':
+                    return this.generateCanonicalENV();
+                
+                case 'hocon':
+                    return this.generateHOCON();
+                
+                default:
+                    return 'Unknown format';
             }
         }
     },
@@ -213,7 +263,6 @@ createApp({
 
                 this.validateLoadConfig();
             } finally {
-                // Use nextTick to prevent race conditions
                 this.$nextTick(() => {
                     this.loadTypeChanging = false;
                 });
@@ -252,7 +301,6 @@ createApp({
 
         loadData: {
             handler(newVal, oldVal) {
-                // Call debounced validation
                 this.debouncedValidateLoadConfig();
             },
             deep: true
@@ -262,18 +310,15 @@ createApp({
     // ============================================
     // Lifecycle Hooks
     // ============================================
-
     created() {
-        // Create debounced validation function using UIService
         this.debouncedValidateLoadConfig = UIService.debounce(() => {
             this.validateLoadConfig();
         }, 300);
     },
     
     async mounted() {
-        console.log('🚀 Performance Test Runner v0.8.0 - Security Hardened');
+        console.log('🚀 Performance Test Runner v0.9.0 - HOCON Support');
 
-        // Initialize
         await this.loadConfiguration();
 
         if (this.testConfig) {
@@ -282,29 +327,24 @@ createApp({
 
         this.checkToken();
 
-        // Initialize UI Service with event handlers
         this.uiCleanup = UIService.initialize({
             context: this,
             onScroll: this.handleScroll,
             onKeyboard: this.handleKeyboard
         });
 
-        // Trigger initial scroll handler
         this.handleScroll();
 
-        // Make available for debugging
         window.vueApp = this;
         
         console.log('✅ Application initialized');
     },
 
     beforeUnmount() {
-        // Cleanup UI listeners
         if (this.uiCleanup) {
             this.uiCleanup();
         }
         
-        // Abort any pending requests
         if (this.abortController) {
             this.abortController.abort();
         }
@@ -353,12 +393,10 @@ createApp({
          * Handle scroll events
          */
         handleScroll() {
-            // Get scroll data
             const scrollData = UIService.getScrollData();
             this.isScrolled = scrollData.isScrolled;
             this.scrollProgress = scrollData.progress;
 
-            // Detect active section
             const sections = ['run', 'history', 'ai'];
             const activeSection = UIService.detectActiveSection(sections, 150);
             if (activeSection) {
@@ -367,7 +405,7 @@ createApp({
         },
 
         /**
-         * Open settings modal (placeholder)
+         * Open settings modal
          */
         openSettingsModal() {
             this.showSafeStatus('info', {
@@ -376,7 +414,7 @@ createApp({
         },
 
         /**
-         * Open help modal (placeholder)
+         * Open help modal
          */
         openHelpModal() {
             this.showSafeStatus('info', {
@@ -391,7 +429,6 @@ createApp({
             this.configLoading = true;
             this.configError = null;
 
-            // Cancel previous request if any
             if (this.abortController) {
                 this.abortController.abort();
             }
@@ -412,7 +449,6 @@ createApp({
 
                 const config = await response.json();
 
-                // Validate configuration structure
                 if (!config.loadConfig || !config.environment || !config.scenarioConfig) {
                     throw new Error('Invalid configuration structure');
                 }
@@ -545,14 +581,12 @@ createApp({
                 return;
             }
 
-            // Check if name already exists
             if (this.userPresets.some(p => p.name.trim() === name.trim())) {
                 if (!confirm(`A preset named "${name}" already exists. Overwrite it?`)) {
                     return;
                 }
             }
 
-            // Create preset using service
             const config = {
                 selections: {
                     loadType: this.selection.loadType,
@@ -623,17 +657,75 @@ createApp({
         },
 
         /**
-         * Generate JSON format output
+         * Generate canonical JSON format (NEW - primary payload)
          */
-        generateJsonFormat() {
-            return FormatUtils.toJSON(this.currentConfig);
+        generateCanonicalJSON() {
+            try {
+                const canonical = CanonicalMapper.toCanonical(
+                    {
+                        loadType: this.selection.loadType,
+                        environment: this.selection.environment,
+                        targetUrl: this.selection.targetUrl,
+                        scenario: this.selection.scenario
+                    },
+                    this.loadData,
+                    this.scenarioData,
+                    this.testConfig
+                );
+
+                return JSON.stringify(canonical, null, 2);
+            } catch (error) {
+                console.error('Failed to generate canonical JSON:', error);
+                return `Error generating JSON: ${error.message}`;
+            }
         },
 
         /**
-         * Generate ENV format output
+         * Generate canonical ENV format (NEW - strict encoding)
          */
-        generateEnvFormat() {
-            return FormatUtils.toENV(this.currentConfig);
+        generateCanonicalENV() {
+            try {
+                const canonical = CanonicalMapper.toCanonical(
+                    {
+                        loadType: this.selection.loadType,
+                        environment: this.selection.environment,
+                        targetUrl: this.selection.targetUrl,
+                        scenario: this.selection.scenario
+                    },
+                    this.loadData,
+                    this.scenarioData,
+                    this.testConfig
+                );
+
+                return EnvEncoder.encode(canonical);
+            } catch (error) {
+                console.error('Failed to generate canonical ENV:', error);
+                return `Error generating ENV: ${error.message}`;
+            }
+        },
+
+        /**
+         * Generate HOCON format (NEW - preview)
+         */
+        generateHOCON() {
+            try {
+                const canonical = CanonicalMapper.toCanonical(
+                    {
+                        loadType: this.selection.loadType,
+                        environment: this.selection.environment,
+                        targetUrl: this.selection.targetUrl,
+                        scenario: this.selection.scenario
+                    },
+                    this.loadData,
+                    this.scenarioData,
+                    this.testConfig
+                );
+
+                return HoconFormatter.format(canonical);
+            } catch (error) {
+                console.error('Failed to generate HOCON:', error);
+                return `Error generating HOCON: ${error.message}`;
+            }
         },
 
         /**
@@ -691,18 +783,37 @@ createApp({
             this.isSubmitting = true;
 
             try {
-                const token = StorageUtils.getItem(this.config.TOKEN_STORAGE_KEY);
+                const token = TokenService.getToken();
                 
-                // Use GitHubAPI module
+                // Build canonical configuration
+                const canonicalConfig = CanonicalMapper.toCanonical(
+                    {
+                        loadType: this.selection.loadType,
+                        environment: this.selection.environment,
+                        targetUrl: this.selection.targetUrl,
+                        scenario: this.selection.scenario
+                    },
+                    this.loadData,
+                    this.scenarioData,
+                    this.testConfig
+                );
+
+                // Validate canonical config
+                const validation = CanonicalMapper.validate(canonicalConfig);
+                if (!validation.valid) {
+                    throw new Error('Configuration validation failed: ' + validation.errors.join(', '));
+                }
+
+                // Use GitHubAPI module with canonical config
                 const result = await GitHubAPI.triggerWorkflow(
-                    this.currentConfig,
+                    canonicalConfig,
                     token,
-                    this.config.API_CONFIG,
+                    this.config.github,
                     this.outputFormat
                 );
 
                 if (result.success) {
-                    this.handleSuccess(result);
+                    this.handleSuccess(result, canonicalConfig);
                 } else {
                     this.handleError(result);
                 }
@@ -718,20 +829,23 @@ createApp({
         /**
          * Handle successful workflow trigger
          */
-        handleSuccess(result) {
+        handleSuccess(result, canonicalConfig) {
             const lines = [
                 'Performance test triggered successfully!',
                 '',
                 'Configuration:'
             ];
 
+            const profileKey = canonicalConfig.test.type;
+            const profileConfig = canonicalConfig.test.load.profiles[profileKey];
+
             const list = [
-                `Load Type: ${result.data.loadType}`,
-                `Users: ${result.data.users}`,
-                `Duration: ${result.data.duration}s`,
-                `Environment: ${result.data.environment}`,
-                `Target: ${result.data.targetUrl}`,
-                `Scenario: ${result.data.scenario}`
+                `Load Type: ${canonicalConfig.test.type}`,
+                `Users: ${profileConfig.users}`,
+                `Duration: ${profileConfig.duration}`,
+                `Environment: ${canonicalConfig.test.environment.type}`,
+                `Target: ${canonicalConfig.test.environment.url}`,
+                `Scenario: ${canonicalConfig.test.simulation}`
             ];
 
             this.showSafeStatus('success', {
@@ -810,6 +924,24 @@ createApp({
         },
 
         /**
+         * Open token modal
+         */
+        openModal() {
+            this.modal.visible = true;
+            this.$nextTick(() => {
+                UIService.focusElement('github-token');
+            });
+        },
+
+        /**
+         * Close token modal
+         */
+        closeModal() {
+            this.modal.visible = false;
+            this.modal.tokenInput = '';
+        },
+
+        /**
          * Save GitHub token
          */
         saveToken() {
@@ -820,7 +952,6 @@ createApp({
                 return;
             }
 
-            // Try to save with validation
             const result = TokenService.saveToken(token, { validate: true });
 
             if (result.success) {
@@ -831,7 +962,6 @@ createApp({
                     lines: ['Token saved successfully! You can now trigger tests.']
                 });
             } else if (result.warning) {
-                // Token format unusual, ask for confirmation
                 const confirmed = confirm(
                     `${result.message}\n\nDo you want to save it anyway?`
                 );
@@ -853,34 +983,14 @@ createApp({
             } else {
                 alert(`Failed to save token: ${result.message}`);
             }
-        },
-        
-        /**
-         * Open token modal
-         */
-        openModal() {
-            this.modal.visible = true;
-            this.$nextTick(() => {
-                UIService.focusElement('github-token');
-            });
-        },
-
-        /**
-         * Close token modal
-         */
-        closeModal() {
-            this.modal.visible = false;
-            this.modal.tokenInput = '';
         }
-
     }
 }).mount('#app');
 
-// Global error handler (add to app.js at the end)
+// Global error handler
 window.addEventListener('error', (event) => {
     console.error('Global Error:', event.error);
     
-    // Show user-friendly message
     if (window.vueApp) {
         window.vueApp.showSafeStatus('error', {
             lines: [
