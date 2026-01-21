@@ -217,48 +217,7 @@ const StorageUtils = {
         }
     },
 
-    /**
-     * Export all localStorage data
-     * @returns {Object} All localStorage data
-     */
-    exportAll() {
-        try {
-            const data = {};
-            const keys = this.getAllKeys();
-            
-            keys.forEach(key => {
-                data[key] = localStorage.getItem(key);
-            });
-            
-            return data;
-        } catch (error) {
-            console.error('Failed to export localStorage:', error);
-            return {};
-        }
-    },
 
-    /**
-     * Import localStorage data
-     * @param {Object} data - Data to import
-     * @param {boolean} merge - Merge with existing data (default: false)
-     * @returns {boolean} True if successful
-     */
-    importAll(data, merge = false) {
-        try {
-            if (!merge) {
-                this.clear();
-            }
-            
-            Object.entries(data).forEach(([key, value]) => {
-                this.setItem(key, value);
-            });
-            
-            return true;
-        } catch (error) {
-            console.error('Failed to import localStorage:', error);
-            return false;
-        }
-    }
 };
 
 // Export for browser

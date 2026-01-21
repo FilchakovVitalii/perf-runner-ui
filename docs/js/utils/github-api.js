@@ -252,44 +252,7 @@ buildApiUrl(githubConfig) {
         };
     },
 
-    /**
-     * Get recent workflow runs
-     * @param {string} token - GitHub personal access token
-     * @param {Object} githubConfig - API configuration
-     * @param {number} limit - Number of runs to fetch (default: 10)
-     * @returns {Promise<Object>} Result with workflow runs data
-     */
-async getWorkflowRuns(token, githubConfig, limit = 10) {
-    try {
-        const url = `${githubConfig.apiBase}/repos/${githubConfig.owner}/${githubConfig.repo}/actions/workflows/${githubConfig.workflow}/runs?per_page=${limit}`;
-            const response = await fetch(url, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `token ${token}`
-                }
-            });
 
-            if (response.ok) {
-                const data = await response.json();
-                return {
-                    success: true,
-                    runs: data.workflow_runs || []
-                };
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                return {
-                    success: false,
-                    message: errorData.message || 'Failed to fetch workflow runs'
-                };
-            }
-
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
-    }
 };
 
 // Export for browser

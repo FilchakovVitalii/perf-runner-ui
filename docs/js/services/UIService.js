@@ -210,75 +210,7 @@ const UIService = {
         }, duration);
     },
 
-    /**
-     * Get keyboard shortcuts help text
-     * @returns {Array<Object>} Array of shortcut objects with { keys, description }
-     */
-    getShortcutsHelp() {
-        return [
-            { keys: 'Ctrl + Enter', description: 'Submit form and trigger test' },
-            { keys: 'Ctrl + S', description: 'Save current configuration as preset' },
-            { keys: 'Escape', description: 'Close open modals' }
-        ];
-    },
 
-    /**
-     * Check if element is visible in viewport
-     * @param {string} selector - CSS selector
-     * @returns {boolean} True if visible
-     */
-    isElementVisible(selector) {
-        const element = document.querySelector(selector);
-        if (!element) return false;
-
-        const rect = element.getBoundingClientRect();
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-        );
-    },
-
-    /**
-     * Smooth scroll to top of page
-     */
-    scrollToTop() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    },
-
-    /**
-     * Smooth scroll to bottom of page
-     */
-    scrollToBottom() {
-        window.scrollTo({
-            top: document.documentElement.scrollHeight,
-            behavior: 'smooth'
-        });
-    },
-
-    /**
-     * Get viewport dimensions
-     * @returns {Object} Object with width and height
-     */
-    getViewportSize() {
-        return {
-            width: window.innerWidth || document.documentElement.clientWidth,
-            height: window.innerHeight || document.documentElement.clientHeight
-        };
-    },
-
-    /**
-     * Check if mobile viewport
-     * @param {number} breakpoint - Breakpoint in pixels (default: 768)
-     * @returns {boolean} True if mobile
-     */
-    isMobileViewport(breakpoint = 768) {
-        return this.getViewportSize().width < breakpoint;
-    },
 
     /**
      * Debounce function (utility for scroll handlers)

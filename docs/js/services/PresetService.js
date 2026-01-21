@@ -281,64 +281,7 @@ const PresetService = {
         return null;
     },
 
-    /**
-     * Export user presets as JSON file
-     * @param {Array} userPresets - User presets to export
-     * @returns {string} JSON string
-     */
-    exportPresets(userPresets) {
-        return JSON.stringify({
-            version: '1.0',
-            exported: new Date().toISOString(),
-            presets: userPresets
-        }, null, 2);
-    },
 
-    /**
-     * Import user presets from JSON
-     * @param {string} jsonString - JSON string to import
-     * @returns {Object} Result with { success, presets, error }
-     */
-    importPresets(jsonString) {
-        try {
-            const data = JSON.parse(jsonString);
-
-            if (!data.presets || !Array.isArray(data.presets)) {
-                throw new Error('Invalid preset file format');
-            }
-
-            // Sanitize imported presets
-            const sanitizedPresets = data.presets
-                .filter(p => p && p.id && p.name)
-                .map(p => this.sanitizePreset(p));
-
-            return {
-                success: true,
-                presets: sanitizedPresets
-            };
-
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message || 'Failed to import presets'
-            };
-        }
-    },
-
-    /**
-     * Get preset statistics
-     * @param {Array} userPresets - User presets array
-     * @returns {Object} Statistics object
-     */
-    getStats(userPresets) {
-        return {
-            builtInCount: this.builtInPresets.length,
-            userCount: userPresets.length,
-            totalCount: this.builtInPresets.length + userPresets.length,
-            remainingSlots: this.MAX_USER_PRESETS - userPresets.length,
-            storageUsed: JSON.stringify(userPresets).length
-        };
-    }
 };
 
 // Export for browser
