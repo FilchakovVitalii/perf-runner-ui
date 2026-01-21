@@ -95,6 +95,13 @@
                 "testBoolean": true,
                  "use_cache": true
             }
+        },
+        "com.boilerplate.gatling.scenario.ECommerceScenario":{
+             "label": "ECommerce Gatling scenario",
+            "description": "Example of Gatling E-commerce scenario",
+            "fields": {
+                 "use_cache": true
+            }
         }
     },
     "fieldMetadata": {
