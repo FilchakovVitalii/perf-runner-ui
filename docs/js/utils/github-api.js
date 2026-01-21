@@ -149,27 +149,16 @@ buildApiUrl(githubConfig) {
 
     /**
      * Build payload from legacy configuration (backward compatibility)
+     * DEPRECATED: Legacy format support - use canonical format instead
      * @param {Object} config - Legacy configuration object
      * @param {string} format - Output format preference
      * @returns {Object} Workflow dispatch payload
      */
     buildLegacyPayload(config, format) {
-        const configData = {
-            loadType: config.loadType,
-            environment: config.environment,
-            targetUrl: config.target_url,
-            scenario: config.scenario,
-            ...config.loadConfig,
-            ...config.scenarioFields
-        };
+        console.warn('⚠️ Using legacy format - consider migrating to canonical format');
 
-        // Format as JSON or ENV
-        let configString;
-        if (format === 'env') {
-            configString = FormatUtils.toENV(config);
-        } else {
-            configString = FormatUtils.toJSON(config);
-        }
+        // Format as JSON (legacy ENV format removed)
+        const configString = JSON.stringify(config, null, 2);
 
         return {
             ref: this.githubConfig.branch,
@@ -181,7 +170,7 @@ buildApiUrl(githubConfig) {
                 scenario: config.scenario,
                 users: String(config.loadConfig?.users || 1),
                 duration: String(config.loadConfig?.duration || 60),
-                output_format: format || 'json'
+                output_format: 'json' // Force JSON for legacy
             }
         };
     },
@@ -263,44 +252,7 @@ buildApiUrl(githubConfig) {
         };
     },
 
-    /**
-     * Get recent workflow runs
-     * @param {string} token - GitHub personal access token
-     * @param {Object} githubConfig - API configuration
-     * @param {number} limit - Number of runs to fetch (default: 10)
-     * @returns {Promise<Object>} Result with workflow runs data
-     */
-async getWorkflowRuns(token, githubConfig, limit = 10) {
-    try {
-        const url = `${githubConfig.apiBase}/repos/${githubConfig.owner}/${githubConfig.repo}/actions/workflows/${githubConfig.workflow}/runs?per_page=${limit}`;
-            const response = await fetch(url, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `token ${token}`
-                }
-            });
 
-            if (response.ok) {
-                const data = await response.json();
-                return {
-                    success: true,
-                    runs: data.workflow_runs || []
-                };
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                return {
-                    success: false,
-                    message: errorData.message || 'Failed to fetch workflow runs'
-                };
-            }
-
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
-    }
 };
 
 // Export for browser

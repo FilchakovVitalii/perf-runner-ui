@@ -50,65 +50,7 @@ const ValidationUtils = {
         return errors;
     },
 
-    /**
-     * Validate scenario configuration data
-     * @param {Object} scenarioData - Scenario configuration object
-     * @returns {Array<string>} Array of error messages (empty if valid)
-     */
-    validateScenarioConfig(scenarioData) {
-        const errors = [];
 
-        // Future: Add scenario-specific validation
-        // For now, scenarios are flexible and don't need strict validation
-
-        return errors;
-    },
-
-    /**
-     * Check if form selections are complete
-     * @param {Object} selection - Selection object with loadType, environment, targetUrl, scenario
-     * @returns {boolean} True if all required selections are made
-     */
-    isSelectionComplete(selection) {
-        return !!(
-            selection.loadType &&
-            selection.environment &&
-            selection.targetUrl &&
-            selection.scenario
-        );
-    },
-
-    /**
-     * Validate entire configuration before submission
-     * @param {Object} config - Full configuration object
-     * @returns {Object} Validation result with { valid: boolean, errors: Array<string> }
-     */
-    validateFullConfig(config) {
-        const errors = [];
-
-        // Check selections
-        if (!config.loadType) errors.push('Load type is required');
-        if (!config.environment) errors.push('Environment is required');
-        if (!config.target_url) errors.push('Target URL is required');
-        if (!config.scenario) errors.push('Scenario is required');
-
-        // Validate load config
-        if (config.loadConfig) {
-            const loadErrors = this.validateLoadConfig(config.loadConfig);
-            errors.push(...loadErrors);
-        }
-
-        // Validate scenario config
-        if (config.scenarioFields) {
-            const scenarioErrors = this.validateScenarioConfig(config.scenarioFields);
-            errors.push(...scenarioErrors);
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors
-        };
-    }
 };
 
 // Export for browser
