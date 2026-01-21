@@ -86,10 +86,11 @@
             "fields": {}
         },
         "com.boilerplate.gatling.scenario.ExampleScenario": {
-            "label": "Scenario No Additional Fields",
-            "description": "Simple scenario without extra configuration",
+            "label": "ExampleScenario",
+            "description": "Example scenario for gatling-ez",
             "fields": {
-                "testBoolean": true
+                "testBoolean": true,
+                 "use_cache": true
             }
         }
     },
@@ -152,6 +153,10 @@
         },
         "TEST_PAYLOAD":{
             "label": "useTestPayloads",
+            "help": "the payloads that includes parameters, to filter them before 3rd party"
+        },
+        "testBoolean":{
+            "label": "Custom test boolean",
             "help": "the payloads that includes parameters, to filter them before 3rd party"
         }
     }
