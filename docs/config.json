@@ -42,21 +42,24 @@
             "label": "Sandbox",
             "urls": [
                 "https://example-sandbox.com",
-                "https://domain-sandbox.com"
+                "https://domain-sandbox.com",
+                "https://api-ecomm.gatling.io"
             ]
         },
         "stage": {
             "label": "Stage",
             "urls": [
                 "https://example-stage.com",
-                "https://domain-stage.com"
+                "https://domain-stage.com",
+                "https://api-ecomm.gatling.io"
             ]
         },
         "production": {
             "label": "Production",
             "urls": [
                 "https://example-prod.com",
-                "https://domain.com"
+                "https://domain.com",
+                "https://api-ecomm.gatling.io"
             ],
             "warning": "⚠️ You are targeting PRODUCTION environment!"
         }
