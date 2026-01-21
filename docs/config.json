@@ -9,7 +9,7 @@
         "smoke": {
             "label": "Smoke Test",
             "description": "Quick validation test with minimal load",
-            "rampUp": 60,
+            "ramp": 60,
             "users": 5,
             "duration": 360,
             "minPause": 1,
@@ -18,7 +18,7 @@
         "longevity": {
             "label": "Longevity Test",
             "description": "Extended duration test for stability",
-            "rampUp": 300,
+            "ramp": 300,
             "users": 10,
             "duration": 28000,
             "minPause": 1,
@@ -27,7 +27,7 @@
         "capacity": {
             "label": "Capacity Test",
             "description": "High load test to determine system limits",
-            "rampUp": 3300,
+            "ramp": 3300,
             "users": 100,
             "duration": 3600,
             "warmupRamp": 1,
@@ -98,7 +98,7 @@
         }
     },
     "fieldMetadata": {
-        "rampUp": {
+        "ramp": {
             "label": "Ramp-Up Time",
             "unit": "seconds",
             "help": "Time to gradually reach target user count"
