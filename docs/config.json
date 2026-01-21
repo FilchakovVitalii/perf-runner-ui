@@ -93,14 +93,14 @@
             "description": "Example scenario for gatling-ez",
             "fields": {
                 "testBoolean": true,
-                 "use_cache": true
+                "use_cache": true
             }
         },
-        "com.boilerplate.gatling.scenario.ECommerceScenario":{
-             "label": "ECommerce Gatling scenario",
+        "com.boilerplate.gatling.scenario.ECommerceScenario": {
+            "label": "ECommerce Gatling scenario",
             "description": "Example of Gatling E-commerce scenario",
             "fields": {
-                 "use_cache": true
+                "use_cache": true
             }
         }
     },
@@ -161,11 +161,11 @@
             "label": "Custom Digit Parameter",
             "help": "Custom numeric value for scenario"
         },
-        "TEST_PAYLOAD":{
+        "TEST_PAYLOAD": {
             "label": "useTestPayloads",
             "help": "the payloads that includes parameters, to filter them before 3rd party"
         },
-        "testBoolean":{
+        "testBoolean": {
             "label": "Custom test boolean",
             "help": "the payloads that includes parameters, to filter them before 3rd party"
         }
