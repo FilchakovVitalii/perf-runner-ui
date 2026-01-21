@@ -104,8 +104,8 @@ const CanonicalMapper = {
         const profileConfig = {};
 
         // Standard fields
-        if (loadData.rampUp !== undefined) {
-            profileConfig.rampUp = this.formatDuration(loadData.rampUp);
+        if (loadData.ramp !== undefined) {
+            profileConfig.ramp = this.formatDuration(loadData.ramp);
         }
 
         if (loadData.users !== undefined) {
