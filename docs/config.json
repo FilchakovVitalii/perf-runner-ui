@@ -84,6 +84,13 @@
             "label": "Scenario No Additional Fields",
             "description": "Simple scenario without extra configuration",
             "fields": {}
+        },
+        "com.boilerplate.gatling.scenario.ExampleScenario": {
+            "label": "Scenario No Additional Fields",
+            "description": "Simple scenario without extra configuration",
+            "fields": {
+                "testBoolean": true
+            }
         }
     },
     "fieldMetadata": {
