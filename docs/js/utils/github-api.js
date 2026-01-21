@@ -149,27 +149,16 @@ buildApiUrl(githubConfig) {
 
     /**
      * Build payload from legacy configuration (backward compatibility)
+     * DEPRECATED: Legacy format support - use canonical format instead
      * @param {Object} config - Legacy configuration object
      * @param {string} format - Output format preference
      * @returns {Object} Workflow dispatch payload
      */
     buildLegacyPayload(config, format) {
-        const configData = {
-            loadType: config.loadType,
-            environment: config.environment,
-            targetUrl: config.target_url,
-            scenario: config.scenario,
-            ...config.loadConfig,
-            ...config.scenarioFields
-        };
+        console.warn('⚠️ Using legacy format - consider migrating to canonical format');
 
-        // Format as JSON or ENV
-        let configString;
-        if (format === 'env') {
-            configString = FormatUtils.toENV(config);
-        } else {
-            configString = FormatUtils.toJSON(config);
-        }
+        // Format as JSON (legacy ENV format removed)
+        const configString = JSON.stringify(config, null, 2);
 
         return {
             ref: this.githubConfig.branch,
@@ -181,7 +170,7 @@ buildApiUrl(githubConfig) {
                 scenario: config.scenario,
                 users: String(config.loadConfig?.users || 1),
                 duration: String(config.loadConfig?.duration || 60),
-                output_format: format || 'json'
+                output_format: 'json' // Force JSON for legacy
             }
         };
     },
