@@ -230,6 +230,9 @@ createApp({
                 case 'hocon':
                     return this.generateHOCON();
                 
+                case 'properties':
+                    return this.generateProperties();
+                
                 default:
                     return 'Unknown format';
             }
@@ -725,6 +728,30 @@ createApp({
             } catch (error) {
                 console.error('Failed to generate HOCON:', error);
                 return `Error generating HOCON: ${error.message}`;
+            }
+        },
+
+        /**
+         * Generate Properties format (Java Properties format)
+         */
+        generateProperties() {
+            try {
+                const canonical = CanonicalMapper.toCanonical(
+                    {
+                        loadType: this.selection.loadType,
+                        environment: this.selection.environment,
+                        targetUrl: this.selection.targetUrl,
+                        scenario: this.selection.scenario
+                    },
+                    this.loadData,
+                    this.scenarioData,
+                    this.testConfig
+                );
+
+                return PropertiesFormatter.format(canonical);
+            } catch (error) {
+                console.error('Failed to generate Properties:', error);
+                return `Error generating Properties: ${error.message}`;
             }
         },
 
