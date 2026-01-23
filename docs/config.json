@@ -9,7 +9,7 @@
         "smoke": {
             "label": "Smoke Test",
             "description": "Quick validation test with minimal load",
-            "rampUp": 60,
+            "ramp": 60,
             "users": 5,
             "duration": 360,
             "minPause": 1,
@@ -18,7 +18,7 @@
         "longevity": {
             "label": "Longevity Test",
             "description": "Extended duration test for stability",
-            "rampUp": 300,
+            "ramp": 300,
             "users": 10,
             "duration": 28000,
             "minPause": 1,
@@ -27,7 +27,7 @@
         "capacity": {
             "label": "Capacity Test",
             "description": "High load test to determine system limits",
-            "rampUp": 3300,
+            "ramp": 3300,
             "users": 100,
             "duration": 3600,
             "warmupRamp": 1,
@@ -42,21 +42,24 @@
             "label": "Sandbox",
             "urls": [
                 "https://example-sandbox.com",
-                "https://domain-sandbox.com"
+                "https://domain-sandbox.com",
+                "https://api-ecomm.gatling.io"
             ]
         },
         "stage": {
             "label": "Stage",
             "urls": [
                 "https://example-stage.com",
-                "https://domain-stage.com"
+                "https://domain-stage.com",
+                "https://api-ecomm.gatling.io"
             ]
         },
         "production": {
             "label": "Production",
             "urls": [
                 "https://example-prod.com",
-                "https://domain.com"
+                "https://domain.com",
+                "https://api-ecomm.gatling.io"
             ],
             "warning": "⚠️ You are targeting PRODUCTION environment!"
         }
@@ -84,10 +87,25 @@
             "label": "Scenario No Additional Fields",
             "description": "Simple scenario without extra configuration",
             "fields": {}
+        },
+        "com.boilerplate.gatling.scenario.ExampleScenario": {
+            "label": "ExampleScenario",
+            "description": "Example scenario for gatling-ez",
+            "fields": {
+                "testBoolean": true,
+                "use_cache": true
+            }
+        },
+        "com.boilerplate.gatling.scenario.ECommerceScenario": {
+            "label": "ECommerce Gatling scenario",
+            "description": "Example of Gatling E-commerce scenario",
+            "fields": {
+                "use_cache": true
+            }
         }
     },
     "fieldMetadata": {
-        "rampUp": {
+        "ramp": {
             "label": "Ramp-Up Time",
             "unit": "seconds",
             "help": "Time to gradually reach target user count"
@@ -143,8 +161,12 @@
             "label": "Custom Digit Parameter",
             "help": "Custom numeric value for scenario"
         },
-        "TEST_PAYLOAD":{
+        "TEST_PAYLOAD": {
             "label": "useTestPayloads",
+            "help": "the payloads that includes parameters, to filter them before 3rd party"
+        },
+        "testBoolean": {
+            "label": "Custom test boolean",
             "help": "the payloads that includes parameters, to filter them before 3rd party"
         }
     }

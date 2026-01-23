@@ -26,8 +26,8 @@ const ValidationUtils = {
 
         // Validate duration vs ramp-up
         if (loadData.duration !== undefined &&
-            loadData.rampUp !== undefined &&
-            loadData.duration < loadData.rampUp) {
+            loadData.ramp !== undefined &&
+            loadData.duration < loadData.ramp) {
             errors.push('Duration must be greater than or equal to Ramp-Up time');
         }
 

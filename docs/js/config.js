@@ -7,9 +7,9 @@ const CONFIG = {
     // GitHub Repository (single source of truth)
     github: {
         owner: 'FilchakovVitalii',
-        repo: 'perf-runner',
-        workflow: 'basic.yml',
-        branch: 'main',
+        repo: 'gatling.perf.ez',
+        workflow: 'run-test.yml',
+        branch: 'dev',
         apiBase: 'https://api.github.com'
     },
     
