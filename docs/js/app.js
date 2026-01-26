@@ -142,7 +142,9 @@ createApp({
 
         selectedScenarioFields() {
             if (!this.selectedScenario) return null;
-            return this.selectedScenario.fields;
+            const fields = this.selectedScenario.fields;
+            // Return null if fields don't exist or are empty
+            return (fields && Object.keys(fields).length > 0) ? fields : null;
         },
 
         availableUrls() {
@@ -289,12 +291,22 @@ createApp({
             try {
                 console.log('Scenario changed to:', newScenario);
 
-                const fields = this.testConfig.scenarioConfig[newScenario].fields;
-                this.scenarioData = { ...fields };
-                this.scenarioConfigFields = this.generateFields(
-                    fields,
-                    this.testConfig.fieldMetadata
-                );
+                // Handle missing or empty fields - treat undefined or empty object as no fields
+                const scenarioConfig = this.testConfig.scenarioConfig[newScenario];
+                const fields = scenarioConfig?.fields;
+                
+                // Only use fields if they exist and are not empty
+                if (fields && Object.keys(fields).length > 0) {
+                    this.scenarioData = { ...fields };
+                    this.scenarioConfigFields = this.generateFields(
+                        fields,
+                        this.testConfig.fieldMetadata
+                    );
+                } else {
+                    // No fields or empty fields - set to empty
+                    this.scenarioData = {};
+                    this.scenarioConfigFields = [];
+                }
             } finally {
                 this.$nextTick(() => {
                     this.scenarioChanging = false;
