@@ -35,6 +35,21 @@
             "warmupDuration": 60,
             "minPause": 1,
             "maxPause": 3
+        },
+        "CustomLoadProfile": {
+            "label": "Range Users",
+            "description": "Custom load profile with user range",
+            "ramp": 15,
+            "duration": 3600,
+            "minUser": 1,
+            "maxUser": 3
+        },
+        "FixedRps": {
+            "label": "Fixed RPS",
+            "description": "Fixed requests per second load test",
+            "rps": 3,
+            "ramp": "10s",
+            "duration": "10s"
         }
     },
     "environment": {
@@ -85,8 +100,7 @@
         },
         "project.scenario.ScenarioNoAdditionalFields": {
             "label": "Scenario No Additional Fields",
-            "description": "Simple scenario without extra configuration",
-            "fields": {}
+            "description": "Simple scenario without extra configuration"
         },
         "com.boilerplate.gatling.scenario.ExampleScenario": {
             "label": "ExampleScenario",
