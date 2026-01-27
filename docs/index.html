@@ -786,6 +786,7 @@
 
     <!-- Configuration -->
     <script src="js/config.js"></script>
+    <script src="js/utils/cookie-storage.js"></script>
 
     <!-- Core Utilities (NO dependencies - load first) -->
     <script src="js/utils/security.js"></script>
@@ -811,6 +812,7 @@
       (function verifyModules() {
         const requiredModules = [
           'CONFIG',
+          'CookieStorage',
           'SecurityUtils',
           'StorageUtils',
           'ValidationUtils',
