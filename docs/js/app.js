@@ -142,9 +142,7 @@ createApp({
 
         selectedScenarioFields() {
             if (!this.selectedScenario) return null;
-            const fields = this.selectedScenario.fields;
-            // Return null if fields don't exist or are empty
-            return (fields && Object.keys(fields).length > 0) ? fields : null;
+            return this.selectedScenario.fields;
         },
 
         availableUrls() {
@@ -232,9 +230,6 @@ createApp({
                 case 'hocon':
                     return this.generateHOCON();
                 
-                case 'properties':
-                    return this.generateProperties();
-                
                 default:
                     return 'Unknown format';
             }
@@ -291,22 +286,12 @@ createApp({
             try {
                 console.log('Scenario changed to:', newScenario);
 
-                // Handle missing or empty fields - treat undefined or empty object as no fields
-                const scenarioConfig = this.testConfig.scenarioConfig[newScenario];
-                const fields = scenarioConfig?.fields;
-                
-                // Only use fields if they exist and are not empty
-                if (fields && Object.keys(fields).length > 0) {
-                    this.scenarioData = { ...fields };
-                    this.scenarioConfigFields = this.generateFields(
-                        fields,
-                        this.testConfig.fieldMetadata
-                    );
-                } else {
-                    // No fields or empty fields - set to empty
-                    this.scenarioData = {};
-                    this.scenarioConfigFields = [];
-                }
+                const fields = this.testConfig.scenarioConfig[newScenario].fields;
+                this.scenarioData = { ...fields };
+                this.scenarioConfigFields = this.generateFields(
+                    fields,
+                    this.testConfig.fieldMetadata
+                );
             } finally {
                 this.$nextTick(() => {
                     this.scenarioChanging = false;
@@ -740,30 +725,6 @@ createApp({
             } catch (error) {
                 console.error('Failed to generate HOCON:', error);
                 return `Error generating HOCON: ${error.message}`;
-            }
-        },
-
-        /**
-         * Generate Properties format (Java Properties format)
-         */
-        generateProperties() {
-            try {
-                const canonical = CanonicalMapper.toCanonical(
-                    {
-                        loadType: this.selection.loadType,
-                        environment: this.selection.environment,
-                        targetUrl: this.selection.targetUrl,
-                        scenario: this.selection.scenario
-                    },
-                    this.loadData,
-                    this.scenarioData,
-                    this.testConfig
-                );
-
-                return PropertiesFormatter.format(canonical);
-            } catch (error) {
-                console.error('Failed to generate Properties:', error);
-                return `Error generating Properties: ${error.message}`;
             }
         },
 
