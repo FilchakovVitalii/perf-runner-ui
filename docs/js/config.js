@@ -7,18 +7,16 @@ const CONFIG = {
     // GitHub Repository (single source of truth)
     github: {
         owner: 'FilchakovVitalii',
-        repo: 'perf-runner',
-        workflow: 'basic.yml',
-        branch: 'main',
+        repo: 'gatling.perf.ez',
+        workflow: 'run-test.yml',
+        branch: 'dev',
         apiBase: 'https://api.github.com'
     },
     
-    // Storage: token in cookie or localStorage; presets stay in localStorage
+    // Local Storage Keys
     storage: {
         tokenKey: 'perf_runner_github_token',
-        presetsKey: 'perf_runner_user_presets',
-        tokenBackend: 'cookie',   // 'cookie' | 'localStorage'
-        cookieMaxAgeDays: 90
+        presetsKey: 'perf_runner_user_presets'
     },
     
     // Application Settings

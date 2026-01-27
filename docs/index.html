@@ -546,18 +546,6 @@
                         />
                         <span>HOCON</span>
                       </label>
-                      <label
-                        class="format-option"
-                        :class="{ active: outputFormat === 'properties' }"
-                        title="Java Properties format (flat key-value pairs)"
-                      >
-                        <input
-                          type="radio"
-                          value="properties"
-                          v-model="outputFormat"
-                        />
-                        <span>PROPERTIES</span>
-                      </label>
                     </div>
                   </div>
 
@@ -786,7 +774,6 @@
 
     <!-- Configuration -->
     <script src="js/config.js"></script>
-    <script src="js/utils/cookie-storage.js"></script>
 
     <!-- Core Utilities (NO dependencies - load first) -->
     <script src="js/utils/security.js"></script>
@@ -799,7 +786,6 @@
     <script src="js/utils/canonical-mapper.js"></script>
     <script src="js/utils/env-encoder.js"></script>
     <script src="js/utils/hocon-formatter.js"></script>
-    <script src="js/utils/properties-formatter.js"></script>
     <!-- Services -->
     <script src="js/services/TokenService.js"></script>
     <script src="js/services/PresetService.js"></script>
@@ -812,7 +798,6 @@
       (function verifyModules() {
         const requiredModules = [
           'CONFIG',
-          'CookieStorage',
           'SecurityUtils',
           'StorageUtils',
           'ValidationUtils',

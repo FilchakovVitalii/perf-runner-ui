@@ -125,12 +125,6 @@ buildApiUrl(githubConfig) {
                 console.log('📦 Sending HOCON format configuration');
                 break;
     
-            case 'properties':
-                // Format as Properties
-                configString = PropertiesFormatter.format(canonical);
-                console.log('📦 Sending Properties format configuration');
-                break;
-    
             case 'json':
             default:
                 // Stringify as JSON (default)

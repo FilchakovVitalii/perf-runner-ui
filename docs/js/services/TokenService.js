@@ -12,17 +12,7 @@ const TokenService = {
     get STORAGE_KEY() {
         return window.CONFIG?.storage?.tokenKey || 'perf_runner_github_token';
     },
-
-    /**
-     * Whether to use cookie backend (from config)
-     * @returns {boolean}
-     */
-    _useCookieBackend() {
-        return typeof window !== 'undefined' &&
-            window.CONFIG?.storage?.tokenBackend === 'cookie' &&
-            typeof window.CookieStorage === 'object';
-    },
-
+    
     /**
      * Check if a valid token exists
      * @returns {boolean} True if valid token exists
@@ -33,27 +23,11 @@ const TokenService = {
     },
 
     /**
-     * Get stored token (with one-time migration from localStorage when using cookie backend)
+     * Get stored token
      * @returns {string|null} Token or null if not found
      */
     getToken() {
-        const key = this.STORAGE_KEY;
-        if (this._useCookieBackend()) {
-            let token = CookieStorage.getCookie(key);
-            if (!token && typeof StorageUtils !== 'undefined') {
-                const fromStorage = StorageUtils.getItem(key);
-                if (fromStorage) {
-                    const maxAge = (window.CONFIG?.storage?.cookieMaxAgeDays ?? 90) * 86400;
-                    if (CookieStorage.setCookie(key, fromStorage, { maxAge, path: '/', sameSite: 'Lax', secure: typeof location !== 'undefined' && location.protocol === 'https:' })) {
-                        StorageUtils.removeItem(key);
-                        token = fromStorage;
-                        console.log('✅ Token migrated from localStorage to cookie');
-                    }
-                }
-            }
-            return token || null;
-        }
-        return StorageUtils.getItem(key);
+        return StorageUtils.getItem(this.STORAGE_KEY);
     },
 
     /**
@@ -89,20 +63,8 @@ const TokenService = {
             console.warn('⚠️ Saving token with unusual format');
         }
 
-        // Save to storage (cookie or localStorage)
-        const key = this.STORAGE_KEY;
-        let saved = false;
-        if (this._useCookieBackend()) {
-            const maxAge = (window.CONFIG?.storage?.cookieMaxAgeDays ?? 90) * 86400;
-            saved = CookieStorage.setCookie(key, sanitizedToken, {
-                maxAge,
-                path: '/',
-                sameSite: 'Lax',
-                secure: typeof location !== 'undefined' && location.protocol === 'https:'
-            });
-        } else {
-            saved = StorageUtils.setItem(key, sanitizedToken);
-        }
+        // Save to storage
+        const saved = StorageUtils.setItem(this.STORAGE_KEY, sanitizedToken);
 
         if (saved) {
             console.log('✅ Token saved successfully');
@@ -123,15 +85,12 @@ const TokenService = {
      * @returns {boolean} True if removed successfully
      */
     removeToken() {
-        const key = this.STORAGE_KEY;
-        const removed = this._useCookieBackend()
-            ? CookieStorage.removeCookie(key, '/')
-            : StorageUtils.removeItem(key);
-
+        const removed = StorageUtils.removeItem(this.STORAGE_KEY);
+        
         if (removed) {
             console.log('🗑️ Token removed');
         }
-
+        
         return removed;
     },
 
