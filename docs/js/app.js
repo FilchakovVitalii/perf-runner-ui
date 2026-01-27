@@ -521,38 +521,28 @@ createApp({
         },
 
         /**
-         * Load a preset configuration
+         * Load a preset configuration (model-driven via PresetService.applyConfigToState)
          */
         loadPreset(preset) {
             console.log('📂 Loading preset:', preset.name);
 
-            const config = preset.config;
+            const patch = PresetService.applyConfigToState(preset.config || {});
 
-            if (config.selections) {
-                this.selection.loadType = config.selections.loadType || '';
-                this.selection.environment = config.selections.environment || '';
-                this.selection.scenario = config.selections.scenario || '';
+            Object.keys(patch.selections).forEach(k => {
+                if (patch.selections[k] !== undefined) {
+                    this.selection[k] = patch.selections[k];
+                }
+            });
 
-                this.$nextTick(() => {
-                    if (config.selections.targetUrl) {
-                        this.selection.targetUrl = config.selections.targetUrl;
-                    } else if (this.availableUrls.length > 0) {
-                        this.selection.targetUrl = this.availableUrls[0];
-                    }
-                });
-            }
-
-            if (config.loadData) {
-                this.$nextTick(() => {
-                    Object.assign(this.loadData, config.loadData);
-                });
-            }
-
-            if (config.scenarioData) {
-                this.$nextTick(() => {
-                    Object.assign(this.scenarioData, config.scenarioData);
-                });
-            }
+            this.$nextTick(() => {
+                if (patch.selections.targetUrl) {
+                    this.selection.targetUrl = patch.selections.targetUrl;
+                } else if (this.availableUrls.length > 0) {
+                    this.selection.targetUrl = this.availableUrls[0];
+                }
+                Object.assign(this.loadData, patch.loadData);
+                Object.assign(this.scenarioData, patch.scenarioData);
+            });
 
             this.activePreset = preset.id;
             this.manualConfigExpanded = false;
@@ -602,16 +592,11 @@ createApp({
                 }
             }
 
-            const config = {
-                selections: {
-                    loadType: this.selection.loadType,
-                    environment: this.selection.environment,
-                    targetUrl: this.selection.targetUrl,
-                    scenario: this.selection.scenario
-                },
-                loadData: { ...this.loadData },
-                scenarioData: { ...this.scenarioData }
-            };
+            const config = PresetService.buildConfigFromState(
+                this.selection,
+                this.loadData,
+                this.scenarioData
+            );
 
             try {
                 const newPreset = PresetService.createPreset(name, description, icon, config);
@@ -662,6 +647,99 @@ createApp({
             } else {
                 alert(result.error || 'Failed to delete preset');
             }
+        },
+
+        /**
+         * Export all user presets as JSON file
+         */
+        exportPresets() {
+            if (this.userPresets.length === 0) {
+                this.showSafeStatus('info', { lines: ['No presets to export.'] });
+                return;
+            }
+            const payload = PresetService.buildExportPayload(this.userPresets);
+            const date = new Date().toISOString().slice(0, 10);
+            const filename = `perf-runner-presets-${date}.json`;
+            this._triggerJsonDownload(filename, payload);
+            this.showSafeStatus('success', {
+                lines: [`Exported ${this.userPresets.length} preset${this.userPresets.length === 1 ? '' : 's'}.`]
+            });
+        },
+
+        /**
+         * Export a single preset as JSON file
+         */
+        exportPreset(preset) {
+            if (!preset || !preset.name) return;
+            const payload = PresetService.buildExportPayload([preset]);
+            const safe = (preset.name || 'preset').replace(/[^a-zA-Z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'preset';
+            const filename = `perf-runner-preset-${safe}.json`;
+            this._triggerJsonDownload(filename, payload);
+            this.showSafeStatus('success', {
+                lines: [`Exported preset "${SecurityUtils.escapeHtml(preset.name)}".`]
+            });
+        },
+
+        /**
+         * Trigger download of a JSON file (blob + temporary link)
+         */
+        _triggerJsonDownload(filename, data) {
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        },
+
+        /**
+         * Open file picker for preset import
+         */
+        triggerImportFileSelect() {
+            const el = this.$refs.importFileInput;
+            if (el) {
+                el.value = '';
+                el.click();
+            }
+        },
+
+        /**
+         * Handle chosen import file (parse, merge, update state)
+         */
+        onImportFileSelected(event) {
+            const input = event.target;
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = PresetService.parseImportFile(reader.result);
+                if (!result.ok) {
+                    this.showSafeStatus('error', {
+                        lines: [result.error || 'Invalid file']
+                    });
+                    input.value = '';
+                    return;
+                }
+                const merge = PresetService.mergeImportedPresets(this.userPresets, result.presets || [], {});
+                if (merge.success) {
+                    this.userPresets = merge.presets;
+                    const msg = merge.importedCount === 0 && (merge.skippedCount || 0) > 0
+                        ? 'No presets imported. ' + (merge.skippedCount || 0) + ' skipped (duplicates or invalid).'
+                        : 'Imported ' + merge.importedCount + ' preset(s).' + (merge.skippedCount ? ' ' + merge.skippedCount + ' skipped (duplicates).' : '');
+                    this.showSafeStatus('success', { lines: [msg] });
+                } else {
+                    this.showSafeStatus('error', { lines: [merge.error || 'Import failed'] });
+                }
+                input.value = '';
+            };
+            reader.onerror = () => {
+                this.showSafeStatus('error', { lines: ['Could not read file.'] });
+                input.value = '';
+            };
+            reader.readAsText(file);
         },
 
         /**
