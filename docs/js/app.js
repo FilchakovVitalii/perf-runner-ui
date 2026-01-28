@@ -338,6 +338,10 @@ createApp({
 
         if (this.testConfig) {
             this.initializePresets();
+            const res = this.config.resources || {};
+            if (res.builtInPresetsUrl) {
+                this.builtInPresets = await PresetService.loadBuiltInPresets(res.builtInPresetsUrl);
+            }
         }
 
         this.checkToken();

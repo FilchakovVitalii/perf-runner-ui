@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "smoke-sandbox",
+      "name": "Quick Smoke",
+      "icon": "🔥",
+      "description": "Fast smoke test on sandbox environment",
+      "config": {
+        "selections": {
+          "loadType": "smoke",
+          "environment": "sandbox",
+          "scenario": "project.scenario.ScenarioName"
+        },
+        "loadData": {},
+        "scenarioData": {}
+      }
+    },
+    {
+      "id": "capacity-stage",
+      "name": "Capacity Stage",
+      "icon": "📊",
+      "description": "Full capacity test on staging environment",
+      "config": {
+        "selections": {
+          "loadType": "capacity",
+          "environment": "stage",
+          "scenario": "project.scenario.ScenarioName"
+        },
+        "loadData": {},
+        "scenarioData": {}
+      }
+    },
+    {
+      "id": "longevity-sandbox",
+      "name": "Longevity",
+      "icon": "⏱️",
+      "description": "Long-running stability test on sandbox",
+      "config": {
+        "selections": {
+          "loadType": "longevity",
+          "environment": "sandbox",
+          "scenario": "project.scenario.ScenarioName"
+        },
+        "loadData": {},
+        "scenarioData": {}
+      }
+    },
+    {
+      "id": "quick-validation",
+      "name": "Quick Validation",
+      "icon": "🎯",
+      "description": "Quick validation test with minimal config",
+      "config": {
+        "selections": {
+          "loadType": "smoke",
+          "environment": "sandbox",
+          "scenario": "project.scenario.ScenarioNoAdditionalFields"
+        },
+        "loadData": {},
+        "scenarioData": {}
+      }
+    }
+  ]
+}

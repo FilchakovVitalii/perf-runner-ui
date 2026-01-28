@@ -7,65 +7,6 @@
 
 const PresetService = {
     /**
-     * Built-in preset configurations
-     * These are immutable and always available
-     */
-    builtInPresets: [
-        {
-            id: 'smoke-sandbox',
-            name: 'Quick Smoke',
-            icon: '🔥',
-            description: 'Fast smoke test on sandbox environment',
-            config: {
-                selections: {
-                    loadType: 'smoke',
-                    environment: 'sandbox',
-                    scenario: 'project.scenario.ScenarioName'
-                }
-            }
-        },
-        {
-            id: 'capacity-stage',
-            name: 'Capacity Stage',
-            icon: '📊',
-            description: 'Full capacity test on staging environment',
-            config: {
-                selections: {
-                    loadType: 'capacity',
-                    environment: 'stage',
-                    scenario: 'project.scenario.ScenarioName'
-                }
-            }
-        },
-        {
-            id: 'longevity-sandbox',
-            name: 'Longevity',
-            icon: '⏱️',
-            description: 'Long-running stability test on sandbox',
-            config: {
-                selections: {
-                    loadType: 'longevity',
-                    environment: 'sandbox',
-                    scenario: 'project.scenario.ScenarioName'
-                }
-            }
-        },
-        {
-            id: 'quick-validation',
-            name: 'Quick Validation',
-            icon: '🎯',
-            description: 'Quick validation test with minimal config',
-            config: {
-                selections: {
-                    loadType: 'smoke',
-                    environment: 'sandbox',
-                    scenario: 'project.scenario.ScenarioNoAdditionalFields'
-                }
-            }
-        }
-    ],
-
-    /**
      * Storage key for user presets
      */
     STORAGE_KEY: 'perf_runner_presets',
@@ -157,21 +98,62 @@ const PresetService = {
     },
 
     /**
-     * Initialize preset system
-     * @returns {Object} Object with builtInPresets and userPresets arrays
+     * Initialize preset system (user presets only; built-in are loaded separately from file).
+     * @returns {Object} { builtInPresets: [], userPresets }
      */
     initialize() {
         const userPresets = this.loadUserPresets();
-        
-        console.log('✅ Presets initialized:', {
-            builtIn: this.builtInPresets.length,
-            user: userPresets.length
-        });
-
+        console.log('✅ Presets initialized (user):', userPresets.length);
         return {
-            builtInPresets: this.builtInPresets,
+            builtInPresets: [],
             userPresets
         };
+    },
+
+    /**
+     * Load built-in presets from a resource URL (e.g. resources/builtin-presets.json).
+     * Same file format as export: { version, presets }. Preserves preset ids from the file.
+     * @param {string} [url] - If omitted, uses CONFIG.resources.builtInPresetsUrl.
+     * @returns {Promise<Array>} Sanitized presets; [] if disabled, 404, or invalid.
+     */
+    async loadBuiltInPresets(url) {
+        const u = url || (typeof window !== 'undefined' && window.CONFIG?.resources?.builtInPresetsUrl) || '';
+        if (!u || typeof u !== 'string' || u.trim() === '') {
+            return [];
+        }
+        try {
+            const res = await fetch(u.trim(), { cache: 'no-cache' });
+            if (!res.ok) {
+                if (res.status !== 404) {
+                    console.warn('Built-in presets request failed:', res.status, res.statusText);
+                }
+                return [];
+            }
+            const data = await res.json();
+            const raw = Array.isArray(data.presets) ? data.presets : [];
+            const out = [];
+            for (let i = 0; i < raw.length; i++) {
+                const p = raw[i];
+                if (!p || typeof p !== 'object') continue;
+                const name = p.name != null ? String(p.name).trim() : '';
+                if (!name) continue;
+                const c = p.config;
+                if (!c || typeof c !== 'object' || !c.selections || typeof c.selections !== 'object') continue;
+                const patch = this.applyConfigToState(c);
+                out.push(this.sanitizePreset({
+                    id: p.id != null ? String(p.id) : 'builtin-' + i,
+                    name,
+                    description: p.description != null ? p.description : '',
+                    icon: (p.icon != null && String(p.icon).trim() !== '') ? SecurityUtils.sanitizeEmoji(p.icon) : '',
+                    config: { selections: patch.selections, loadData: patch.loadData, scenarioData: patch.scenarioData }
+                }));
+            }
+            console.log('📂 Loaded built-in presets:', out.length, 'from', u);
+            return out;
+        } catch (e) {
+            console.warn('Built-in presets load failed:', e);
+            return [];
+        }
     },
 
     /**
@@ -452,27 +434,7 @@ const PresetService = {
         } catch (e) {
             return { success: false, presets: currentPresets, importedCount: 0, skippedCount: 0, error: e.message };
         }
-    },
-
-    /**
-     * Find a preset by ID (searches both built-in and user presets)
-     * @param {string} presetId - Preset ID
-     * @param {Array} userPresets - User presets array
-     * @returns {Object|null} Preset object or null if not found
-     */
-    findPresetById(presetId, userPresets) {
-        // Search built-in presets
-        const builtIn = this.builtInPresets.find(p => p.id === presetId);
-        if (builtIn) return builtIn;
-
-        // Search user presets
-        const user = userPresets.find(p => p.id === presetId);
-        if (user) return user;
-
-        return null;
-    },
-
-
+    }
 };
 
 // Export for browser
