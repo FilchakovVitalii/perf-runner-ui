@@ -136,6 +136,14 @@
                   <span class="preset-name-compact">{{ preset.name }}</span>
                   <button
                     type="button"
+                    class="preset-export-btn"
+                    @click.stop="exportPreset(preset)"
+                    title="Export this preset"
+                  >
+                    ⬇
+                  </button>
+                  <button
+                    type="button"
                     class="preset-delete-btn"
                     @click.stop="deletePreset(preset.id)"
                     title="Delete preset"
@@ -143,6 +151,36 @@
                     ×
                   </button>
                 </div>
+              </div>
+              <div
+                v-if="!configLoading && !configError"
+                class="preset-export-row"
+              >
+                <input
+                  ref="importFileInput"
+                  type="file"
+                  accept=".json,application/json"
+                  class="preset-import-input"
+                  aria-label="Import presets file"
+                  @change="onImportFileSelected"
+                />
+                <button
+                  type="button"
+                  class="btn btn-preset-action btn-sm"
+                  :disabled="userPresets.length === 0"
+                  @click="exportPresets"
+                  title="Export as JSON"
+                >
+                  Export
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-preset-action btn-sm"
+                  @click="triggerImportFileSelect"
+                  title="Import from JSON file"
+                >
+                  Import
+                </button>
               </div>
             </div>
 

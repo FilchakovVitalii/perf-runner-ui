@@ -25,6 +25,11 @@ const CONFIG = {
     app: {
         version: '0.9.0-hocon',
         defaultOutputFormat: 'env'  // 'json', 'env', or 'hocon'
+    },
+
+    // Resource path for built-in presets (relative to app origin). Loaded at startup if non-empty.
+    resources: {
+        builtInPresetsUrl: 'resources/builtin-presets.json'   // set to '' to disable
     }
 };
 
