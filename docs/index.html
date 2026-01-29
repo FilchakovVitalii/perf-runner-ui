@@ -668,16 +668,90 @@
         </section>
 
         <!-- ============================================
-                 HISTORY SECTION (Placeholder)
+                 HISTORY SECTION
                  ============================================ -->
         <section
           id="history-section"
           class="app-section section-history"
         >
           <div class="section-content">
-            <div class="placeholder-content">
-              <div class="placeholder-icon">📊</div>
-              <h2 class="placeholder-title">Coming Soon</h2>
+            <h3 class="section-title">📊 Run History</h3>
+            <p class="section-description">
+              Workflow runs for the configured workflow. Open a run to view details in GitHub Actions.
+            </p>
+
+            <div
+              v-if="historyError"
+              class="history-message history-error"
+            >
+              {{ historyError }}
+            </div>
+            <div
+              v-else-if="historyLoading"
+              class="history-message history-loading"
+            >
+              Loading runs…
+            </div>
+            <div
+              v-else-if="historyRuns.length === 0"
+              class="history-message history-empty"
+            >
+              No runs found. Trigger a test from the Run section.
+            </div>
+            <div
+              v-else
+              class="history-runs"
+            >
+              <div class="history-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  :disabled="historyLoading"
+                  @click="loadHistoryRuns"
+                >
+                  🔄 Refresh
+                </button>
+              </div>
+              <div class="history-table-wrap">
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Run #</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="run in historyRuns"
+                      :key="run.id"
+                      class="history-row"
+                    >
+                      <td>{{ run.run_number }}</td>
+                      <td>{{ formatHistoryDate(run.created_at) }}</td>
+                      <td>
+                        <span
+                          class="history-status"
+                          :class="'status-' + (run.conclusion || run.status)"
+                        >
+                          {{ run.conclusion || run.status }}
+                        </span>
+                      </td>
+                      <td>
+                        <a
+                          :href="run.html_url"
+                          target="_blank"
+                          rel="noopener"
+                          class="btn btn-link btn-sm"
+                        >
+                          Open run
+                        </a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>
@@ -833,6 +907,7 @@
     <script src="js/utils/fields.js"></script>
     <script src="js/utils/validators.js"></script>
     <script src="js/utils/github-api.js"></script>
+    <script src="js/utils/github-runs-api.js"></script>
     <!--Canonical format utilities -->
     <script src="js/utils/canonical-mapper.js"></script>
     <script src="js/utils/env-encoder.js"></script>
@@ -855,6 +930,7 @@
           'StorageUtils',
           'ValidationUtils',
           'GitHubAPI',
+          'GitHubRunsAPI',
           'PresetService',
           'UIService'
         ];

@@ -117,7 +117,12 @@ createApp({
             debouncedValidateLoadConfig: null,
 
             // UI cleanup function 
-            uiCleanup: null
+            uiCleanup: null,
+
+            // History (workflow runs)
+            historyRuns: [],
+            historyLoading: false,
+            historyError: null
         };
     },
 
@@ -346,6 +351,8 @@ createApp({
 
         this.checkToken();
 
+        this.loadHistoryRuns();
+
         this.uiCleanup = UIService.initialize({
             context: this,
             onScroll: this.handleScroll,
@@ -406,6 +413,57 @@ createApp({
          */
         scrollToSection(sectionName) {
             UIService.scrollToSection(sectionName);
+            if (sectionName === 'history') {
+                this.loadHistoryRuns();
+            }
+        },
+
+        /**
+         * Load workflow runs for History tab
+         */
+        async loadHistoryRuns() {
+            const token = TokenService.getToken();
+            if (!token) {
+                this.historyError = 'Sign in with a GitHub token to view run history.';
+                this.historyRuns = [];
+                return;
+            }
+            this.historyError = null;
+            this.historyLoading = true;
+            try {
+                const result = await GitHubRunsAPI.listWorkflowRuns(
+                    this.config.github,
+                    token,
+                    { per_page: 20, page: 1 }
+                );
+                if (result.success) {
+                    this.historyRuns = result.runs || [];
+                } else {
+                    this.historyError = result.message || 'Failed to load runs.';
+                    this.historyRuns = [];
+                }
+            } catch (err) {
+                this.historyError = err.message || 'Failed to load runs.';
+                this.historyRuns = [];
+            } finally {
+                this.historyLoading = false;
+            }
+        },
+
+        /**
+         * Format run date for History table
+         */
+        formatHistoryDate(isoString) {
+            if (!isoString) return '—';
+            try {
+                const d = new Date(isoString);
+                return d.toLocaleString(undefined, {
+                    dateStyle: 'short',
+                    timeStyle: 'short'
+                });
+            } catch (_) {
+                return isoString;
+            }
         },
 
         /**
@@ -974,6 +1032,8 @@ createApp({
                 list,
                 link: result.link
             });
+
+            this.loadHistoryRuns();
 
             console.log('✅ Workflow triggered successfully');
         },
