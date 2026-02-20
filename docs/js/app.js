@@ -122,7 +122,15 @@ createApp({
             // History (workflow runs)
             historyRuns: [],
             historyLoading: false,
-            historyError: null
+            historyError: null,
+
+            // History sort (Phase 1): 'date' | 'status' | 'run_number'; order: 'asc' | 'desc'
+            historySortBy: 'date',
+            historySortOrder: 'desc',
+
+            // History filter (Phase 1): status 'all' | 'success' | 'failure' | 'cancelled' | 'in_progress'; branch '' = all
+            historyFilterStatus: 'all',
+            historyFilterBranch: ''
         };
     },
 
@@ -243,6 +251,78 @@ createApp({
                 default:
                     return 'Unknown format';
             }
+        },
+
+        /**
+         * History: sorted runs (Phase 1). Sort by historySortBy / historySortOrder.
+         * Uses created_at for date, (conclusion || status) for status, run_number for run #.
+         */
+        historyRunsSorted() {
+            const runs = [...(this.historyRuns || [])];
+            const by = this.historySortBy || 'date';
+            const order = this.historySortOrder || 'desc';
+            const mult = order === 'asc' ? 1 : -1;
+
+            runs.sort((a, b) => {
+                let aVal, bVal;
+                if (by === 'date') {
+                    aVal = a.created_at || '';
+                    bVal = b.created_at || '';
+                    return mult * (aVal.localeCompare(bVal));
+                }
+                if (by === 'status') {
+                    aVal = (a.conclusion || a.status || '').toString();
+                    bVal = (b.conclusion || b.status || '').toString();
+                    return mult * aVal.localeCompare(bVal);
+                }
+                if (by === 'run_number') {
+                    aVal = Number(a.run_number);
+                    bVal = Number(b.run_number);
+                    if (Number.isNaN(aVal)) aVal = 0;
+                    if (Number.isNaN(bVal)) bVal = 0;
+                    return mult * (aVal - bVal);
+                }
+                if (by === 'branch') {
+                    aVal = (a.head_branch || '').toString();
+                    bVal = (b.head_branch || '').toString();
+                    return mult * aVal.localeCompare(bVal);
+                }
+                return 0;
+            });
+            return runs;
+        },
+
+        /**
+         * History: filtered runs (Phase 1). Filter by status and branch.
+         * Phase 2 will add filter by config (env, duration, scenario) when index is available.
+         */
+        historyRunsFiltered() {
+            let runs = this.historyRunsSorted || [];
+            const statusFilter = this.historyFilterStatus || 'all';
+            const branchFilter = (this.historyFilterBranch || '').trim();
+
+            if (statusFilter !== 'all') {
+                runs = runs.filter((run) => {
+                    const effective = this._historyEffectiveStatus(run);
+                    return effective === statusFilter;
+                });
+            }
+            if (branchFilter) {
+                runs = runs.filter((run) => (run.head_branch || '') === branchFilter);
+            }
+            return runs;
+        },
+
+        /**
+         * Unique branches in current history runs (for branch filter dropdown).
+         */
+        historyBranches() {
+            const set = new Set();
+            (this.historyRuns || []).forEach((r) => {
+                const b = r.head_branch;
+                if (b) set.add(b);
+            });
+            return Array.from(set).sort();
         }
     },
 
@@ -351,6 +431,8 @@ createApp({
 
         this.checkToken();
 
+        this.restoreHistorySortFilter();
+
         this.loadHistoryRuns();
 
         this.uiCleanup = UIService.initialize({
@@ -415,6 +497,113 @@ createApp({
             UIService.scrollToSection(sectionName);
             if (sectionName === 'history') {
                 this.loadHistoryRuns();
+            }
+        },
+
+        /**
+         * Normalize run to filter status: 'success' | 'failure' | 'cancelled' | 'in_progress'
+         */
+        _historyEffectiveStatus(run) {
+            if (run.status === 'queued' || run.status === 'in_progress') return 'in_progress';
+            const c = (run.conclusion || '').toLowerCase();
+            if (c === 'success') return 'success';
+            if (c === 'failure') return 'failure';
+            if (c === 'cancelled') return 'cancelled';
+            return c || 'in_progress';
+        },
+
+        /**
+         * Set History sort and persist (Phase 1)
+         */
+        setHistorySort(sortBy, sortOrder) {
+            this.historySortBy = sortBy;
+            this.historySortOrder = sortOrder;
+            this.persistHistorySortFilter();
+        },
+
+        /**
+         * Toggle sort by column (clickable header). Same column toggles asc/desc; new column sets default order.
+         * @param {string} columnKey - 'date' | 'status' | 'run_number' | 'branch'
+         */
+        toggleHistorySortBy(columnKey) {
+            const valid = ['date', 'status', 'run_number', 'branch'].includes(columnKey);
+            if (!valid) return;
+            const nextOrder = this.historySortBy === columnKey && this.historySortOrder === 'desc' ? 'asc' : 'desc';
+            this.setHistorySort(columnKey, nextOrder);
+        },
+
+        /**
+         * Set History filter by status and persist (Phase 1)
+         */
+        setHistoryFilterStatus(status) {
+            this.historyFilterStatus = status;
+            this.persistHistorySortFilter();
+        },
+
+        /**
+         * Set History filter by branch and persist (Phase 1)
+         */
+        setHistoryFilterBranch(branch) {
+            this.historyFilterBranch = branch || '';
+            this.persistHistorySortFilter();
+        },
+
+        /**
+         * Persist History sort/filter to localStorage (Phase 1)
+         */
+        persistHistorySortFilter() {
+            try {
+                const keySort = 'perf_runner_history_sort';
+                const keyFilter = 'perf_runner_history_filter';
+                if (typeof StorageUtils !== 'undefined') {
+                    StorageUtils.setItem(keySort, JSON.stringify({
+                        by: this.historySortBy,
+                        order: this.historySortOrder
+                    }));
+                    StorageUtils.setItem(keyFilter, JSON.stringify({
+                        status: this.historyFilterStatus,
+                        branch: this.historyFilterBranch || ''
+                    }));
+                }
+            } catch (e) {
+                console.warn('Could not persist history sort/filter:', e);
+            }
+        },
+
+        /**
+         * Restore History sort/filter from localStorage (Phase 1)
+         */
+        restoreHistorySortFilter() {
+            try {
+                const keySort = 'perf_runner_history_sort';
+                const keyFilter = 'perf_runner_history_filter';
+                if (typeof StorageUtils !== 'undefined') {
+                    const rawSort = StorageUtils.getItem(keySort);
+                    if (rawSort) {
+                        const s = JSON.parse(rawSort);
+                        if (s && ['date', 'status', 'run_number', 'branch'].includes(s.by)) {
+                            this.historySortBy = s.by;
+                        }
+                        if (s && (s.order === 'asc' || s.order === 'desc')) {
+                            this.historySortOrder = s.order;
+                        }
+                    }
+                    const rawFilter = StorageUtils.getItem(keyFilter);
+                    if (rawFilter) {
+                        const f = JSON.parse(rawFilter);
+                        if (f && typeof f.status === 'string') {
+                            const v = f.status;
+                            if (['all', 'success', 'failure', 'cancelled', 'in_progress'].includes(v)) {
+                                this.historyFilterStatus = v;
+                            }
+                        }
+                        if (f && typeof f.branch === 'string') {
+                            this.historyFilterBranch = f.branch;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not restore history sort/filter:', e);
             }
         },
 
@@ -1059,8 +1248,8 @@ createApp({
                 lines.push(errorMessage);
                 lines.push('');
                 lines.push('Check:');
-                list.push(`Repository: ${this.config.REPO_OWNER}/${this.config.REPO_NAME}`);
-                list.push(`Workflow file: .github/workflows/${this.config.WORKFLOW_FILE}`);
+                list.push(`Repository: ${this.config.github?.owner}/${this.config.github?.repo}`);
+                list.push(`Workflow file: .github/workflows/${this.config.github?.workflow}`);
             } else {
                 lines.push(errorMessage);
             }

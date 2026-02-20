@@ -185,6 +185,32 @@
 
 .history-toolbar {
     margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+}
+
+.history-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.history-control-label {
+    font-size: 0.875rem;
+    color: var(--text-muted, #666);
+    margin: 0;
+}
+
+.history-select {
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-sm, 4px);
+    border: 1px solid var(--border-color, #dee2e6);
+    font-size: 0.875rem;
+    background: var(--bg, #fff);
+    min-width: 10rem;
 }
 
 .history-table-wrap {
@@ -209,6 +235,33 @@
 .history-table th {
     background: rgba(0, 0, 0, 0.04);
     font-weight: 600;
+}
+
+.history-th-sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.history-th-sortable:hover {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+.history-th-sortable .history-sort-icon {
+    margin-left: 0.25rem;
+    opacity: 0.9;
+}
+
+.history-th-sorted {
+    background: rgba(0, 123, 255, 0.08);
+}
+
+.history-th-sorted:hover {
+    background: rgba(0, 123, 255, 0.12);
+}
+
+.history-th-action {
+    cursor: default;
 }
 
 .history-table tbody tr:last-child td {

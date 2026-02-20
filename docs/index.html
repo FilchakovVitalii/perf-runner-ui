@@ -711,20 +711,95 @@
                 >
                   🔄 Refresh
                 </button>
+                <div class="history-controls">
+                  <label class="history-control-label">Status</label>
+                  <select
+                    class="history-select"
+                    :value="historyFilterStatus"
+                    @change="setHistoryFilterStatus($event.target.value)"
+                    aria-label="Filter by status"
+                  >
+                    <option value="all">All</option>
+                    <option value="success">Success</option>
+                    <option value="failure">Failure</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="in_progress">In progress</option>
+                  </select>
+                  <template v-if="historyBranches.length > 0">
+                    <label class="history-control-label">Branch</label>
+                    <select
+                      class="history-select"
+                      :value="historyFilterBranch"
+                      @change="setHistoryFilterBranch($event.target.value)"
+                      aria-label="Filter by branch"
+                    >
+                      <option value="">All branches</option>
+                      <option
+                        v-for="b in historyBranches"
+                        :key="b"
+                        :value="b"
+                      >
+                        {{ b }}
+                      </option>
+                    </select>
+                  </template>
+                </div>
               </div>
-              <div class="history-table-wrap">
+              <div
+                v-if="historyRuns.length > 0 && historyRunsFiltered.length === 0"
+                class="history-message history-empty"
+              >
+                No runs match the current filter.
+              </div>
+              <div
+                v-else
+                class="history-table-wrap"
+              >
                 <table class="history-table">
                   <thead>
                     <tr>
-                      <th>Run #</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th>Action</th>
+                      <th
+                        class="history-th-sortable"
+                        :class="{ 'history-th-sorted': historySortBy === 'run_number' }"
+                        @click="toggleHistorySortBy('run_number')"
+                        title="Sort by run number"
+                      >
+                        Run #
+                        <span v-if="historySortBy === 'run_number'" class="history-sort-icon" aria-hidden="true">{{ historySortOrder === 'desc' ? '↓' : '↑' }}</span>
+                      </th>
+                      <th
+                        class="history-th-sortable"
+                        :class="{ 'history-th-sorted': historySortBy === 'date' }"
+                        @click="toggleHistorySortBy('date')"
+                        title="Sort by date"
+                      >
+                        Date
+                        <span v-if="historySortBy === 'date'" class="history-sort-icon" aria-hidden="true">{{ historySortOrder === 'desc' ? '↓' : '↑' }}</span>
+                      </th>
+                      <th
+                        class="history-th-sortable"
+                        :class="{ 'history-th-sorted': historySortBy === 'status' }"
+                        @click="toggleHistorySortBy('status')"
+                        title="Sort by status"
+                      >
+                        Status
+                        <span v-if="historySortBy === 'status'" class="history-sort-icon" aria-hidden="true">{{ historySortOrder === 'desc' ? '↓' : '↑' }}</span>
+                      </th>
+                      <th
+                        class="history-th-sortable"
+                        :class="{ 'history-th-sorted': historySortBy === 'branch' }"
+                        @click="toggleHistorySortBy('branch')"
+                        title="Sort by branch"
+                      >
+                        Branch
+                        <span v-if="historySortBy === 'branch'" class="history-sort-icon" aria-hidden="true">{{ historySortOrder === 'desc' ? '↓' : '↑' }}</span>
+                      </th>
+                      <th class="history-th-action">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr
-                      v-for="run in historyRuns"
+                      v-for="run in historyRunsFiltered"
                       :key="run.id"
                       class="history-row"
                     >
@@ -738,6 +813,7 @@
                           {{ run.conclusion || run.status }}
                         </span>
                       </td>
+                      <td>{{ run.head_branch || '—' }}</td>
                       <td>
                         <a
                           :href="run.html_url"
