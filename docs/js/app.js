@@ -294,7 +294,6 @@ createApp({
 
         /**
          * History: filtered runs (Phase 1). Filter by status and branch.
-         * Phase 2 will add filter by config (env, duration, scenario) when index is available.
          */
         historyRunsFiltered() {
             let runs = this.historyRunsSorted || [];
@@ -323,7 +322,8 @@ createApp({
                 if (b) set.add(b);
             });
             return Array.from(set).sort();
-        }
+        },
+
     },
 
     // ============================================
